@@ -1,0 +1,8 @@
+nibabel==2.0.2
+texttable==0.8.4
+paramiko==2.0.2
+numpy==1.11.3
+matplotlib==1.5.1
+PyYAML==5.2
+yaxil==0.2.2
+configparser==3.5.0
