@@ -5,6 +5,7 @@ import subprocess
 sub='7JK25' # Participant ID
 mri_data_dir = '/n/nrg_l3/Users/jsegawa/iProc_MEPILOT/test_bids_ME/mri_data_AP' # Full path to mri_data, mri_dat_AP or mri_data_PA
 resolution = '222' # mm resolution: either 111 or 222, as a string
+partition = 'fasse_bigmem'
 ### ------------------------ ###
 for space in ['NAT','MNI']:
 	if (space == 'NAT'):
@@ -23,7 +24,7 @@ for space in ['NAT','MNI']:
 		run = temp2[1]
 
 		command_params = f'python run_tedana.py --sub {sub} --ses {ses} --task {task} --run {run} --mridatadir {mri_data_dir} --outname tedana --space {space} --resolution {resolution}'
-		command = f'sbatch -p fasse_bigmem -n 1 -t 10:00:00 --mem 450G -o tedana_%J.out -e tedana_%J.err --wrap "{command_params}"'
+		command = f'sbatch -p {partition} -n 1 -t 10:00:00 --mem 450G -o tedana_%J.out -e tedana_%J.err --wrap "{command_params}"'
 		print(command)
 
 		proc= subprocess.Popen([f'{command}'] ,stdout=subprocess.PIPE,shell=True)

@@ -698,8 +698,17 @@ class jobConstructor(object):
         logger.debug(stepname) 
         
         self.reset_steplog()
-        outfile = f'{self.conf.template.TEMPLATE_DIR}/{self.conf.iproc.SUB}_D01_{self.conf.template.MIDVOL_BOLDNAME}_midvol_unwarp_2mm.nii.gz'
+        if self.conf.out_atlas.RESOLUTION == '111':
+            resolution_str = '1p2i'
+        else:
+            resolution_str = '2mm'
+
+        outfile = f'{self.conf.template.TEMPLATE_DIR}/{self.conf.iproc.SUB}_D01_{self.conf.template.MIDVOL_BOLDNAME}_midvol_unwarp_{resolution_str}.nii.gz'
+
         midvol_hdr = f'{self.conf.template.TEMPLATE_DIR}/{self.conf.iproc.SUB}_D01_{self.conf.template.MIDVOL_BOLDNAME}_midvol_hdr_tmp.nii.gz'
+
+        
+
         outfiles = [outfile]
         if self._outfiles_skip(overwrite,outfiles):
             return []
@@ -711,6 +720,7 @@ class jobConstructor(object):
                     self.conf.iproc.SUB,
                     self.conf.template.MIDVOL_BOLDNAME,
                     self.conf.template.TEMPLATE_DIR,
+                    resolution_str,
                     outfile]
     
         self.scans.set_midvol(self.conf)

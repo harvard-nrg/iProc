@@ -1223,7 +1223,11 @@ def main():
     ### --------- NOW TO UPSAMPLED 2MM SPACE!!! 2024.10.05 ------ ###
     #################################################################
 
-    conf.template.midvols_mean = os.path.join(conf.template.TEMPLATE_DIR,f'{conf.iproc.SUB}_midvol_unwarp_2mm.nii.gz')
+    if conf.out_atlas.RESOLUTION == '111':
+        conf.template.midvols_mean = os.path.join(conf.template.TEMPLATE_DIR,f'{conf.iproc.SUB}_midvol_unwarp_1p2i.nii.gz')
+    elif conf.out_atlas.RESOLUTION == '222':
+        conf.template.midvols_mean = os.path.join(conf.template.TEMPLATE_DIR,f'{conf.iproc.SUB}_midvol_unwarp_2mm.nii.gz')
+
 
     # get environmental variables from module system (NCF specific)
     #TODO: is this the best way to do this?
