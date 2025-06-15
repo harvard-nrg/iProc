@@ -209,12 +209,11 @@ class jobConstructor(object):
                 fmap1_no_pad = f'{int(fmap1_run):03d}'
                 fmap_dirname = f'{fmap_dir}_{fmap1_no_pad}'
                 fmap_full_dirname = os.path.join(self.conf.iproc.NATDIR,sessionid,fmap_dirname)
-                dest_fieldmap_nii = f'{fmap_full_dirname}/{sessionid}_{fmap1_no_pad}_fieldmap.nii.gz'
+                dest_fieldmap_nii = f'{fmap_full_dirname}/{sessionid}_{fmap1_no_pad}_fieldmap' #removing .nii.gz affix to also make masked version for QC 2025.06.11 JS
 
                 ## added from LD for bids integration on 2025.03.05
-                outfiles = [dest_fieldmap_nii]
-                mask_copy_nii = '{fdir}/{sessionid}_{fmap1_no}_mag_img_brain_mask.nii.gz'.format(fdir=fmap_full_dirname,sessionid=sessionid,fmap1_no=fmap1_no_pad)
-                ##
+                outfiles = [f'{dest_fieldmap_nii}.nii.gz']
+                mask_copy_nii = f'{fmap_full_dirname}/{sessionid}_{fmap1_no_pad}_mag_img_brain_mask.nii.gz'
 
                 if self._outfiles_skip(overwrite,outfiles):
                     continue
@@ -269,7 +268,7 @@ class jobConstructor(object):
                     cmd.extend([
                         '--output-fmapm', dest_fmapm_nii,
                         '--output-fmapp', dest_fmapp_nii,
-                        '--output-fieldmap', dest_fieldmap_nii,
+                        '--output-fieldmap', f'{dest_fieldmap_nii}.nii.gz',
                         '--work-dir', os.path.join(self.conf.iproc.WORKDIR, f'FMAP_{ses}'),
                         '--output-maskcopy', mask_copy_nii
                     ])
@@ -493,8 +492,8 @@ class jobConstructor(object):
                 logger.debug(json.dumps(fmap_scans, indent=2))
                 if fmap1_no == 0 or fmap2_no == 0:
                     raise ValueError(f'something went wrong with fieldmap type assignment. \n {fmap1_no},{fmap2_no} \n {fmap_scans}')
-                outfile = f'{file_dir}/{sessionid}_{fmap1_no_pad}_fieldmap.nii.gz'
-                outfiles = [outfile]
+                outfile = f'{file_dir}/{sessionid}_{fmap1_no_pad}_fieldmap' #removing .nii.gz affix to also make masked version for QC 2025.06.11 JS
+                outfiles = [f'{outfile}.nii.gz']
                 ## added from LD for bids integration on 2025.03.05
                 mask_copy_nii = f'{file_dir}/{sessionid}_{fmap1_no_pad}_mag_img_brain_mask.nii.gz'
                 ##
@@ -738,6 +737,9 @@ class jobConstructor(object):
         # also performs motion correction relative to midvoltarg
         stepname = 'fm_unwarp_and_mc_to_midvol'
         logger.debug(stepname) 
+
+        FD_LABEL = self.conf.template.FD_LABEL
+        FD_THRESH = self.conf.template.FD_THRESH
          
         job_spec_list = []
         self.reset_steplog()
@@ -826,8 +828,9 @@ class jobConstructor(object):
                         dest_dir,
                         warp_dir,
                         fsl_unwarp_direction,
-                        '0'
-                        '1'] #0 for multiecho, 1 for # of echos
+                        '0',
+                        FD_THRESH,
+                        FD_LABEL] #0 for single echo
            
                     logfile_base = self._io_file_fmt(cmd)
                     if not self.args.no_remove_files:
@@ -908,7 +911,8 @@ class jobConstructor(object):
                         warp_dir,
                         fsl_unwarp_direction,
                         '1',
-                        numechos ] #1 for multi-echo
+                        FD_THRESH,
+                        FD_LABEL] #1 for multi-echo
            
                     logfile_base = self._io_file_fmt(cmd)
                     if not self.args.no_remove_files:
@@ -1569,6 +1573,7 @@ class jobConstructor(object):
         self.reset_steplog()
         job_spec_list = []
         subjid=self.conf.iproc.SUB
+        FD_LABEL = self.conf.template.FD_LABEL
 
         for sessionid,sess in self.scans.sessions():
             for task_type,bold_scan in self.scans.tasks():
@@ -1590,7 +1595,8 @@ class jobConstructor(object):
                     wb_mask = os.path.join(self.conf.template.TEMPLATE_DIR,'mni_masks','wb_mask_mpr_reorient.nii.gz')
                     phys_ts = os.path.join(outputdir,f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat_phys_ts.dat')
                     mc_ts = os.path.join(natdir,f'{sessionid}_bld{bold_no}_reorient_skip_mc.par')
-                    mcout_ts = os.path.join(natdir,f'{sessionid}_bld{bold_no}_reorient_skip_FD*_outlier_matrix.dat')
+                    mcout_ts = os.path.join(natdir,f'{sessionid}_bld{bold_no}_reorient_skip_FD{FD_LABEL}_outlier_matrix.dat')
+                    #mcout_ts = os.path.join(natdir,"%s_bld%s_reorient_skip_FD%s_outlier_matrix.dat" % (sessionid,bold_no, FD_LABEL))
                     nuis_ts = os.path.join(outputdir,f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat_nuis_ts.dat')
                     scang = f'{sessionid}_bld{bold_no}' 
                     nuis_out = os.path.join(outputdir,f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat_nuis.dat')
@@ -1632,7 +1638,8 @@ class jobConstructor(object):
                     wb_mask = os.path.join(self.conf.template.TEMPLATE_DIR,'mni_masks','wb_mask_mpr_reorient.nii.gz')
                     phys_ts = os.path.join(outputdir,f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat_phys_ts.dat')
                     mc_ts = os.path.join(natdir,f'{sessionid}_bld{bold_no}_reorient_skip_mc_e1.par') ##ECHO DIFF
-                    mcout_ts = os.path.join(natdir,f'{sessionid}_bld{bold_no}_reorient_skip_e1_FD*_outlier_matrix.dat') ##ECHO DIFF
+                    mcout_ts = os.path.join(natdir,f'{sessionid}_bld{bold_no}_reorient_skip_e1_FD{FD_LABEL}_outlier_matrix.dat')
+                    #mcout_ts = os.path.join(natdir,f'{sessionid}_bld{bold_no}_reorient_skip_e1_FD*_outlier_matrix.dat') ##ECHO DIFF
                     nuis_ts = os.path.join(outputdir,f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat_nuis_ts.dat')
                     scang = f'{sessionid}_bld{bold_no}' 
                     nuis_out = os.path.join(outputdir,f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat_nuis.dat')
@@ -1738,6 +1745,7 @@ class jobConstructor(object):
         self.reset_steplog()
         job_spec_list = []
         subjid=self.conf.iproc.SUB
+        FD_LABEL = self.conf.template.FD_LABEL
         for sessionid,sess in self.scans.sessions():
             for task_type,bold_scan in self.scans.tasks():
                 scan_no = bold_scan['BLD']
@@ -1749,8 +1757,9 @@ class jobConstructor(object):
 
                     natdir = os.path.join(self.conf.iproc.NATDIR, sessionid, task_dirname)
                     nat_resamp_dir = os.path.join(self.conf.iproc.NAT_RESAMP_DIR, sessionid, task_dirname)
-                    mcout_ts = os.path.join(natdir,f'{sessionid}_bld{bold_no}_reorient_skip_FD*_outlier_matrix.dat')
-                    
+                    #mcout_ts = os.path.join(natdir,f'{sessionid}_bld{bold_no}_reorient_skip_FD*_outlier_matrix.dat')
+                    mcout_ts = os.path.join(natdir,f'{sessionid}_bld{bold_no}_reorient_skip_FD{FD_LABEL}_outlier_matrix.dat')
+
                     if anat_space in ('MNI222','MNI111'): 
                         outputdir = os.path.join(self.conf.iproc.MNI_RESAMP_DIR, sessionid, task_dirname)
                         resid_in = os.path.join(outputdir,f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat_mni.nii.gz')

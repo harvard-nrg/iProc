@@ -9,7 +9,7 @@ PA_BIDS_NIFTI=$2
 FDIR=$3
 codedir=$4
 TotalReadoutTime=$5
-outfile=$6
+outfile=$6 #this now is without the .nii.gz to acoomodate a masked version for QC 2025.06.11 JS
 OUTDIR=$7
 MASK_COPY=$8 # added by LMD
 

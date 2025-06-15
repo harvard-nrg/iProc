@@ -130,16 +130,19 @@ def QC_fmap(steps,overwrite):
 
         for fmap_dir,fmap_scans in steps.scans.fieldmaps():
             fmap1_no = fmap_scans['FIRST_FMAP']
-            fmap1_no_pad = "%03d" % int(fmap1_no)
+            #fmap1_no_pad = "%03d" % int(fmap1_no)
+            fmap1_no_pad = f'{int(fmap1_no):03d}'
             fmap_dirname = f'{fmap_dir}_{fmap1_no_pad}'
 
             # add BOLD page
             bold_scan = nearby_bold(bold_dict,int(fmap1_no))
             scan_no = bold_scan['BLD']
             task_type = bold_scan['TYPE']
-            bold_no = "%03d" % int(scan_no)
+            #bold_no = "%03d" % int(scan_no)
+            bold_no = f'{int(scan_no):03d}'
             task_dirname = f'{task_type}_{bold_no}'
-            spacename = "%s_bld%s_%s" % (sessionid,bold_no,merge_filter)
+            #spacename = "%s_bld%s_%s" % (sessionid,bold_no,merge_filter)
+            spacename = f'{sessionid}_bld{bold_no}_{merge_filter}' #% (sessionid,bold_no,merge_filter)
 
             infile = os.path.join(conf.iproc.NATDIR,sessionid,task_dirname,spacename+'.nii.gz')
 
@@ -155,7 +158,12 @@ def QC_fmap(steps,overwrite):
 
             # add fmap page
             fmap_full_dirname = os.path.join(steps.conf.iproc.NATDIR,sessionid,fmap_dirname)
-            target_fmap_nii = f'{fmap_full_dirname}/{sessionid}_{fmap1_no_pad}_fieldmap.nii.gz'
+
+            if steps.conf.fmap.PREPTOOL == 'topup':
+                target_fmap_nii = f'{fmap_full_dirname}/{sessionid}_{fmap1_no_pad}_fieldmap_masked.nii.gz' #topup not masked
+            else:
+                target_fmap_nii = f'{fmap_full_dirname}/{sessionid}_{fmap1_no_pad}_fieldmap.nii.gz'
+
             fmap_page_sag = qc.page(target_fmap_nii,task_sag_slicer)
             fmap_page_ax = qc.page(target_fmap_nii,task_ax_slicer)
             qc_sag.pages.append(fmap_page_sag)
@@ -339,8 +347,9 @@ def QC_unwarp_motioncorrect_align(steps, merge_filter,template,overwrite):
     qc_ax = qc.qc_pdf_maker(conf,'ax')
     qc_sag = qc.qc_pdf_maker(conf,'sag')
     # create the t1 pages
+    #ax_slicer = {'window_dims':'10 160 10 160 20 105'.split(' '),
     ax_slicer = {'window_dims':'10 160 10 160 20 105'.split(' '),
-                        # <xmin> <xsize> <ymin> <ysize> <zmin> <zsize>
+                        # <xmin> <xsize> <ymin> <ysize> <zmin> <zsize> (for fslroi)
                         'sample': '1', # todo: what is this
                         'width': 14} # Number of images across, I think
     page_ax = qc.page(template,ax_slicer)

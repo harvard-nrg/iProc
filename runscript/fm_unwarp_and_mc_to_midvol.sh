@@ -19,8 +19,10 @@ DEST_DIR=${15}
 WARP_DIR=${16}
 unwarp_direction=${17}
 ME=${18}
-NUMECHOS=${19}
-rmfiles=${20:-''}
+FDThres=${19}
+FDTHRES=${20}
+#NUMECHOS=${19}
+rmfiles=${21:-''}
 
 MIDVOL_UNWARP=${MIDVOL}_unwarp
 
@@ -34,11 +36,12 @@ echo $((${NUMVOL} / 2)) > ${MC_IN%.nii.gz}_OrigMidVol.txt
 OrigMidVol=$((${NUMVOL} / 2))
 #fi
 # calculate FD outliers using the same FD threshold for REST and TASK
-FDThres=0.4
-FDTHRES=0pt4
-if [[ ! -e ${MC_IN%.nii.gz}_FD_vals.txt ]]; then
+# now in the config file
+#FDThres=0.4
+#FDTHRES=0pt4
+#if [[ ! -e ${MC_IN%.nii.gz}_FD_vals.txt ]]; then
 fsl_motion_outliers -i ${MC_IN} -o ${MC_IN%.nii.gz}_FD${FDTHRES}_outlier_mat.txt -s ${MC_IN%.nii.gz}_FD_vals.txt -p ${MC_IN%.nii.gz}_FD.png --fd -v --thresh=${FDThres} > ${MC_IN%.nii.gz}_fsl_motion_outlier_FD${FDTHRES}_output.txt
-fi
+#fi
 grep 'Found spikes at ' ${MC_IN%.nii.gz}_fsl_motion_outlier_FD${FDTHRES}_output.txt > ${MC_IN%.nii.gz}_tmp1.txt
 
 set +e
@@ -153,10 +156,8 @@ flirt -in ${MIDVOL_UNWARP} -ref ${TARGET} -out ${FLIRT_OUT} -omat ${FLIRT_MAT_OU
 
 
 #EDITED to look for skip_mc_e1.par if ME is 1
-echo 'FM_UNWARP_AND_MC... AFTER FLIRT, LINE 159'
-${CODEDIR}/runscript/p2a.sh ${OUTDIR} ${SCAN_TYPE} ${NUMVOL} ${REGRESSORS_MC_DAT_OUT} ${ME}
-echo 'FM_UNWARP_AND_MC... AFTER p2a.sh'
 
+${CODEDIR}/runscript/p2a.sh ${OUTDIR} ${SCAN_TYPE} ${NUMVOL} ${REGRESSORS_MC_DAT_OUT} ${ME}
 
 if [ -n "$rmfiles" ]; then
     for f in $rmfiles;do

@@ -32,7 +32,8 @@ dir2=PA_img
 ArcGet.py -f flat -a ${xnat_alias} -l $sessionid -p $project --scans $first_FM_no -o $dir1
 cd $FDIR/$dir1
 dcm=$(ls | head -1)
-${codedir}/dss.sh $qdir dcm2nii ${dcm}
+${codedir}/dss.sh $qdir dcm2niix -b y -z y -o . ${dcm}
+# ${codedir}/dss.sh $qdir dcm2nii ${dcm} <- deprecated, prior to XA30 upgrade
 mv `ls *.nii.gz | tail -1` ../$dir1.nii.gz #Second image is what we want
 
 #Download Phase image
@@ -49,7 +50,8 @@ TotalReadoutTime=$(jq ".TotalReadoutTime" "../${dir2}.json")
 echo "TotalReadoutTime=${TotalReadoutTime}"
 
 #Convert Phase image to NIFTI
-${codedir}/dss.sh $qdir dcm2nii ${dcm}
+${codedir}/dss.sh $qdir dcm2niix -b y -z y -o . ${dcm}
+# ${codedir}/dss.sh $qdir dcm2nii ${dcm} <- deprecated, prior to XA30
 mv *.nii.gz ../$dir2.nii.gz
 
 cd $FDIR

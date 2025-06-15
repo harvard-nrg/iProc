@@ -3,7 +3,7 @@ set -xeou pipefail
 # Fieldmap prep script, originally from fm.sh.
 # separated from xnat download for modularity.
 FDIR=$1
-outfile=$2
+outfile=$2 #Wihtout .nii.gz extension for QC masked version 2025.06.11 JS
 datain=$3
 b02b0=$4
 OUTDIR=$5
@@ -29,10 +29,15 @@ elif [[ $OUTDIR == *_PA ]]
 fi
 
 topup --imain=all_images.nii.gz --datain=$3 --config=$b02b0 --fout=topup_fmap.nii.gz --iout=se_epi_unwarped.nii.gz --out=topup_out
+
 #convert to radians by miltiplying by 2pi
-fslmaths topup_fmap.nii.gz -mul 6.28 $outfile
+fslmaths topup_fmap.nii.gz -mul 6.28 ${outfile}.nii.gz
+
 #create magniture image and bet it
 fslmaths se_epi_unwarped.nii.gz -Tmean mag_img.nii.gz
 bet2 mag_img.nii.gz mag_img_brain.nii.gz -m -g 0.1 -f 0.45
 fslmaths $FDIR/mag_img_brain -ero $FDIR/mag_img_brain_ero
 cp mag_img_brain_mask.nii.gz $MASK_COPY 
+
+#for QC
+fslmaths ${outfile}.nii.gz -mas $MASK_COPY ${outfile}_masked.nii.gz

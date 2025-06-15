@@ -39,4 +39,4 @@ cd $FDIR
 rm -r $FDIR/pha_img
 rm -r $FDIR/mag_img
 
-${codedir}/runscript/fmap_fsl_prepare_fieldmap_prep.sh ${FDIR} ${outfile} ${maskcopy}
+${codedir}/runscript/fmap_fsl_prepare_fieldmap_prep.sh ${FDIR} ${outfile}.nii.gz ${maskcopy}
