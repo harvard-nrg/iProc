@@ -47,4 +47,4 @@ fslmaths tmp1.nii.gz tmp.nii.gz -odt float
 #fslswapdim tmp.nii.gz -x y z tmp2.nii.gz
 
 #rsync -aP "${ANAT_SCRATCHDIR}/tmp.nii.gz" ${outfile}
-rsync --remove-source-files -aP "${ANAT_SCRATCHDIR}/tmp.nii.gz" ${outfile_reorient} 
+rsync --remove-source-files -aP "${ANAT_SCRATCHDIR}/tmp.nii.gz" ${outfile_reorient}

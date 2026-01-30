@@ -15,7 +15,7 @@ FSAVERAGE6=$6
 SCRATCHDIR=$7
 CODEDIR=$8
 
-cpus=`${CODEDIR}/executorcli.py --cpus-per-node`
+cpus=$(python -c "import os; cpus=len(os.sched_getaffinity(0)); print(cpus)")
 export OMP_NUM_THREADS=${cpus}
 
 origdir=$SCRATCHDIR/$SUBJECT/${fs_sub}/mri/orig

@@ -16,11 +16,11 @@ cd $SCRATCHDIR
 #cd $OUTDIR
 
 echo "If script fails, run: cd $SCRATCHDIR; rm ${BPSS_OUT}+*.BRIK ${BPSS_OUT}+*.HEAD"
-cpus=`${CODEDIR}/executorcli.py --cpus-per-node`
+cpus=$(python -c "import os; cpus=len(os.sched_getaffinity(0)); print(cpus)")
 export OMP_NUM_THREADS=${cpus}
-echo $SLURM_JOB_CPUS_PER_NODE
-echo $SLURM_CPUS_PER_TASK
-if [ "$IPROC_SRUN" == "YES" ] ; then
+echo "OMP_NUM_THREADS=${OMP_NUM_THREADS}"
+
+if [ "${IPROC_SRUN:-NO}" == "YES" ] ; then
     #we're running in a srun-safe environment
     srun -n 1 -c $SLURM_CPUS_PER_TASK 3dBandpass -prefix $BPSS_OUT -mask $MASK 0.01 0.1 ${RESID_OUT}.BRIK
 else

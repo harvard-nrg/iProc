@@ -21,9 +21,6 @@ pushd $SCRATCHDIR
 
 fslsplit ${SPLIT_IN} ./time_point_
 
-# want to integrate this better in the future, but this will do for now
-# This script automatically queries for the environment variable
-# $SLURM_CPUS_PER_TASK , so that must be set by submitting this script via sbatch
 ${pyscript} -m ${MATDIR} -n ${NUMVOLS} -o ${OUTDIR} -s ${SUBID} -t ${TASK} -x ${SESSID} -b ${BOLDNO} --template-dir ${TEMPLATE_DIR} --destination-space ${SPACE} --mni-atlas ${MNI_ATLAS} --scratch=$SCRATCHDIR
 
 popd 

@@ -19,7 +19,7 @@ cd $OUTPATH
 
 echo "------- RUNNING MULTI-ECHO FS6_PROJECT_TO_SURF_ME.SH -------"
 
-if [ "$IPROC_SRUN" == "YES" ] ; then
+if [ "${IPROC_SRUN:-NO}" == "YES" ] ; then
     #we're running in a srun-safe environment
     _IPROC_RUNNER="srun --export=ALL -n 1 -c $SLURM_CPUS_PER_TASK"
 else

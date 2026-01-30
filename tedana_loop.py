@@ -2,8 +2,8 @@ import glob
 import subprocess
 
 ### ------ EDIT HERE ------- ###
-sub='7JK25' # Participant ID
-mri_data_dir = '/n/nrg_l3/Users/jsegawa/iProc_MEPILOT/test_bids_ME/mri_data_AP' # Full path to mri_data, mri_dat_AP or mri_data_PA
+sub='1AB23' # Participant ID
+mri_data_dir = '/path/to/mri_data_AP' # Full path to mri_data, mri_dat_AP or mri_data_PA
 resolution = '222' # mm resolution: either 111 or 222, as a string
 partition = 'fasse_bigmem'
 ### ------------------------ ###

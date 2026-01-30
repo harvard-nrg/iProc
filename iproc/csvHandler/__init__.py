@@ -37,7 +37,7 @@ class scansHandler(object):
         if not self.task_dict:
             raise Exception('you must ingest_task_csv before you ingest_bold_csv')
         
-        with open(csv_fname, 'rU') as f:
+        with open(csv_fname, newline=None) as f:
             self.csv_errors[csv_fname]=[]
             reader = csv.DictReader(f)
             # Analyze is categorically different from the other variables
@@ -128,7 +128,7 @@ class scansHandler(object):
 
     def ingest_task_csv(self, csv_fname):
         # open reader
-        with open(csv_fname, 'rU') as f:
+        with open(csv_fname, newline=None) as f:
             self.csv_errors[csv_fname]=[]
             reader = csv.DictReader(f)
             schema=['TYPE','TR','SKIP','SMOOTHING','NUMVOL','NUMECHOS']
@@ -334,7 +334,7 @@ def load_cluster_requests(csv_fname,args):
     ''' takes in the name of a cluster requests csv, loads the information 
     into the args object. '''
     csv_errors = {}
-    with open(csv_fname, 'rU') as f:
+    with open(csv_fname, newline=None) as f:
         reader = csv.DictReader(f)
         schema=['STEP','RUNMODE','partition','time','mem','cpu']
         if not schema == reader.fieldnames:

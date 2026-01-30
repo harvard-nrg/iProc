@@ -30,7 +30,7 @@ space = args.space
 resolution = args.resolution
 
 
-# e.g., python run_tedana.py --mridatadir /n/nrg_l3/Lab/users/jsegawa/iProc_MEPILOT/Cornell/mri_data --sub 7JK25 --ses 240401_7JK25 --task NBACKMECOR --run 8 --space MNI
+# e.g., python run_tedana.py --mridatadir /path/to/mri_data --sub 1AB23 --ses 240401_1AB23 --task NBACKMECOR --run 8 --space MNI
 
 data_dir = os.path.join(mridatadir,sub,f'{space}{resolution}',ses,f'{task}_{run:03d}')
 

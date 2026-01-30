@@ -50,7 +50,11 @@ def setup(steps,args):
 
     #  create dedicated queue folder and clear it out at the beginning
     
-    dcm2nii_qdir = os.path.join(steps.conf.iproc.OUTDIR,steps.conf.iproc.SUB,'Q')
+    dcm2nii_qdir = os.path.join(
+        steps.conf.iproc.OUTDIR,
+        steps.conf.iproc.SUB,
+        'Q'
+    )
     steps.conf.iproc.QDIR = dcm2nii_qdir
     if os.path.exists(dcm2nii_qdir):
         shutil.rmtree(dcm2nii_qdir)
@@ -757,7 +761,7 @@ def execute(executor_type, job_spec_list,steps, **kwargs):
             # check for empty command
             if j.skip:
                 continue
-            wrapper = os.path.join(conf.iproc.CODEDIR,'wrappers','singularity_wrap.sh')
+            wrapper = os.path.join(conf.iproc.CODEDIR, 'wrappers','singularity_wrap.sh')
             if steps.args.no_srun :
                 srun = "NO"
             else:
@@ -803,8 +807,8 @@ def execute(executor_type, job_spec_list,steps, **kwargs):
                     continue
                 timestamp = time.time()
                 hostname = commons.check_output(['hostname']).strip()
-                job.stdout = job.logfile_base + f'_{hostname}_{timestamp}.err'
-                job.stdout = job.logfile_base + f'_{hostname}_{timestamp}.err'
+                job.stdout = job.logfile_base + f'_{hostname}_{timestamp}.out'
+                job.stderr = job.logfile_base + f'_{hostname}_{timestamp}.err'
                 stdout = open(job.stdout, 'w')
                 stderr = open(job.stderr, 'w')
                 logger.debug(job.cmd)
@@ -812,18 +816,33 @@ def execute(executor_type, job_spec_list,steps, **kwargs):
                 try:
                     logger.debug(f'running {job.cmd}')
                     commons.check_call(job.cmd, stdout=stdout, stderr=stderr)
-                    job.state = 'COMPLETED' 
-                except Exception:
+                    job.state = 'COMPLETED'
+                except Exception as e:
                     logger.info(f'local script has failed: {e}')
                     logger.info(job.stdout)
                     logger.info(job.stderr)
                     stdout.close()
-                    sterr.close()
+                    stderr.close()
                     if skip_fail:
                         continue
                     raise commons.FailedJobError(job)
-
-        elif executor_type in ['slurm','pbsubmit']:
+                # run any dependent/afterok jobs
+                for dependent,_ in job.afterok:
+                    dependent.stdout = job.logfile_base + f'_{hostname}_{timestamp}.out'
+                    try:
+                        logger.debug(f'running dependent job: {dependent.cmd}')
+                        commons.check_call(dependent.cmd, stdout=stdout, stderr=stderr)
+                        dependent.state = 'COMPLETED'
+                    except Exception as e:
+                        logger.error(f'dependent job as failed {dependent.cmd}')
+                        logger.error(f'stdout: {job.stdout}')
+                        logger.error(f'stderr: {job.stderr}')
+                        stdout.close()
+                        stderr.close()
+                        if skip_fail:
+                            continue
+                        raise commons.FailedJobError(dependent)
+        elif executor_type in ['slurm', 'pbsubmit']:
             if executor_type=='slurm':
                 if steps.args.sbatch_args: 
                     sbatch_arg_dict = {str(x):y for x,y in zip(list(range(len(steps.args.sbatch_args))),steps.args.sbatch_args)}
@@ -914,8 +933,10 @@ def post_process_jobs(job_spec_list, args):
             for outdir in job.outfile_dirs:
                 if not os.path.isdir(outdir):
                     os.makedirs(outdir)
-                shutil.copy2(job.stdout, outdir)
-                shutil.copy2(job.stderr, outdir)
+                if job.stdout:
+                    shutil.copy2(job.stdout, outdir)
+                if job.stderr:
+                    shutil.copy2(job.stderr, outdir)
     if die:
         raise Exception('autodiff failure, aborting')
 
@@ -1233,7 +1254,7 @@ def main():
     #################################################################
 
     if conf.out_atlas.RESOLUTION == '111':
-        conf.template.midvols_mean = os.path.join(conf.template.TEMPLATE_DIR,f'{conf.iproc.SUB}_midvol_unwarp_1p2i.nii.gz')
+        conf.template.midvols_mean = os.path.join(conf.template.TEMPLATE_DIR,f'{conf.iproc.SUB}midmean_midvols_on_midvoltarg.nii.gz')
     elif conf.out_atlas.RESOLUTION == '222':
         conf.template.midvols_mean = os.path.join(conf.template.TEMPLATE_DIR,f'{conf.iproc.SUB}_midvol_unwarp_2mm.nii.gz')
 
@@ -1250,7 +1271,7 @@ def main():
         # for freesurfer
     os.environ['SUBJECTS_DIR'] = conf.fs.SUBJECTS_DIR
         # for iProc
-    if args.no_srun :
+    if args.no_srun or args.executor != 'slurm':
         os.environ['IPROC_SRUN'] = "NO"
     else:
         os.environ['IPROC_SRUN'] = "YES"

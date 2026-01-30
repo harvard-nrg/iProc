@@ -236,14 +236,12 @@ def capture_err(cmd):
     returnval = sp.run(cmd,capture_output=True)
     return returnval 
 
-def check_call(cmd):
-    # TODO: have this accept stdout and stderr arguments
+def check_call(cmd, stdout=None, stderr=None):
     try: 
-        returnval = sp.check_output(cmd, stderr=sp.STDOUT).strip()
-        return 
+        returnval = sp.check_call(cmd, stdout=stdout, stderr=stderr)
     except sp.CalledProcessError as e:
-        logger.info(returnval)
         logger.info(e.output)
+        logger.exception(e)
         raise e
 
 def get_json_entity(json_fname,entity_name):

@@ -19,8 +19,7 @@ tmpdir=$OUTPATH
 
 cd $tmpdir
 
-if [ "$IPROC_SRUN" == "YES" ] ; then
-    #we're running in a srun-safe environment
+if [ "${IPROC_SRUN:-NO}" == "YES" ] ; then
     _IPROC_RUNNER="srun --export=ALL -n 1 -c $SLURM_CPUS_PER_TASK"
 else
     _IPROC_RUNNER=""

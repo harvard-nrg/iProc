@@ -144,8 +144,8 @@ def translate_json(input, fname_base, numechos):
     json_name = f'{nifti_basename}.json'
     with open(json_name) as j:
         scan_data = json.load(j)
-        echoTime = str(scan_data['EchoTime']) 
-        dwellTime = str(scan_data['EffectiveEchoSpacing']) 
+        echoTime = scan_data['EchoTime']
+        dwellTime = scan_data['EffectiveEchoSpacing']
         # not going to use here, but want to make sure it's in json
         phase_direction = scan_data['PhaseEncodingDirection']
 
@@ -158,11 +158,13 @@ def translate_json(input, fname_base, numechos):
         dwellTime_fname = f'{fname_base}_dwellTime_e{thisechonum}.sec'
 
     with open(echoTime_fname, 'w') as f:
-        f.write(echoTime)
-        logger.info(f'{echoTime} written to {echoTime_fname}')
+        # rounding to be consistent with xnat_to_nii_gz_task
+        f.write(f'{echoTime:.4f}')
+        logger.info(f'{echoTime:.4f} written to {echoTime_fname}')
     with open(dwellTime_fname, 'w') as f:
-        f.write(dwellTime)
-        logger.info(f'{dwellTime} written to {dwellTime_fname}')
+        # rounding to be consistent with xnat_to_nii_gz_task
+        f.write(f'{dwellTime:.5f}')
+        logger.info(f'{dwellTime:.5f} written to {dwellTime_fname}')
     return json_name
 
 

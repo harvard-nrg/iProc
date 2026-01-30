@@ -310,7 +310,7 @@ class jobConstructor(object):
                 workdir_anat = os.path.join(self.conf.iproc.WORKDIR, work_name) ## why workdir? Shouldn't this be outdir?
                 outnii = os.path.join(anat_dir,anat_name + '.nii.gz')
                 outnii_reorient = os.path.join(anat_dir,anat_name + '_reorient.nii.gz')
-                outfiles = [outnii,outnii_reorient]
+                outfiles = [outnii_reorient]
                 if self._outfiles_skip(overwrite, outfiles):
                     continue
 
@@ -409,7 +409,7 @@ class jobConstructor(object):
         # scans.sessions() and scans.tasks() are special iterators that will
         # update the state of the scan object,
         # for use by _io_file_fmt or other functions.
-        # This way the scans object always has a readily-accessible description
+        # This ay the scans object always has a readily-accessible description
         #of the scan it is currently operating on.
         for sessionid,sess in self.scans.sessions():
             for task_type,bold_scan in self.scans.tasks():
@@ -421,19 +421,20 @@ class jobConstructor(object):
                 task_dirname  = f'{task_type}_{bold_no}'
                 file_dir = os.path.join(self.conf.iproc.NATDIR, sessionid, task_dirname)
 
-### ------------ JENN: REMOVING EXTENTION SO WE CAN ADD ECHO APPEND ------------
+                ### JENN: REMOVING EXTENTION SO WE CAN ADD ECHO APPEND
                 file_name = sessionid + '_bld' + bold_no + '_reorient_skip'
                 outnii=os.path.join(file_dir, file_name)
                 outfiles = [outnii]
-                
+                outfiles_ext = [x + '.nii.gz' for x in outfiles]
+
                 if not (int(NUMECHOS) == 1): #MULTIECHO
                     file_name = sessionid + '_bld' + bold_no + '_reorient_skip'
                     outnii=os.path.join(file_dir, file_name)
                     outfiles_echo = [outnii]
-                    if self._outfiles_skip(overwrite, outfiles_echo):
+                    if self._outfiles_skip(overwrite, outfiles_ext):
                         continue
                 else: #SINGLE ECHO
-                    if self._outfiles_skip(overwrite, outfiles):
+                    if self._outfiles_skip(overwrite, outfiles_ext):
                         continue
 
                 work_name = task_dirname + "_" + sessionid
@@ -505,9 +506,9 @@ class jobConstructor(object):
                     os.makedirs(file_dir)
                 
                 cmd = [
-                    os.path.join(self.conf.iproc.CODEDIR,'modwrap.sh'), 
-                    'module load fsl/4.0.3-ncf', 
-                    'module load fsl/5.0.4-ncf',
+                    #os.path.join(self.conf.iproc.CODEDIR,'modwrap.sh'), 
+                    #'module load fsl/4.0.3-ncf', 
+                    #'module load fsl/5.0.4-ncf',
                     script,
                     sessionid,
                     str(fmap1_no),
@@ -1584,6 +1585,7 @@ class jobConstructor(object):
 
                 if int(numechos) == 1:
                     print('***** SINGLE-ECHO steps.calculate_nuisance_params*****')
+                    codedir = os.path.expanduser(self.conf.iproc.CODEDIR)
                     outputdir = os.path.join(self.conf.iproc.NAT_RESAMP_DIR,  sessionid, task_dirname)
                     natdir = os.path.join(self.conf.iproc.NATDIR,  sessionid, task_dirname)
                     resid_in = os.path.join(outputdir,f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat.nii.gz')
@@ -1620,7 +1622,8 @@ class jobConstructor(object):
                         nuis_out,
                         outputdir,
                         mcout_ts,
-                        nuis_out_nocensor]
+                        nuis_out_nocensor,
+                        codedir]
         
                     logfile_base = self._io_file_fmt(cmd)
                     job_spec_list.append(JobSpec(cmd,logfile_base,outfiles))

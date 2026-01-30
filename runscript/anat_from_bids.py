@@ -44,8 +44,9 @@ def main():
 
     # force orientation to RADIOLOGICAL
     reoriented = os.path.join(tempd, reoriented_basename)
-    forceorient(forced, reoriented)
+    #forceorient(forced, reoriented)
     #reorient(forced, reoriented, dims=['-z', '-x', 'y'])
+    shutil.copy2(forced, reoriented)
 
     # move files to final destination
     logger.info(f'moving {forced} to {args.raw_output}')

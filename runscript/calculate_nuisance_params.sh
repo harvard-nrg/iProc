@@ -18,10 +18,11 @@ NUIS_OUT=${12}
 OUTDIR=${13}
 MCOUT_TS=${14}
 NUIS_OUT_NOCENSOR=${15}
+CODE_DIR=${16}
 
 tmpdir=$(mktemp --directory --tmpdir=${OUTDIR})
 
-if [ "$IPROC_SRUN" == "YES" ] ; then
+if [ "${IPROC_SRUN:-NO}" == "YES" ] ; then
     #we're running in a srun-safe environment
 srun --export=ALL -n 1 -c $SLURM_CPUS_PER_TASK parallel -j 3 --tmpdir=${tmpdir} <<EOF
 fslmeants -i ${RESID_IN} -o ${CSF_TS} -m ${CSF_MASK}
@@ -58,7 +59,12 @@ pushd $tmpdir
 #matlab -nojvm -nodesktop -nosplash -r "try e=0; format long g; nuis_ts=load('${NUIS_TS}'); xx=diff(zscore(detrend(nuis_ts))); x=zscore(detrend(nuis_ts)); xx=[zeros(size(xx(1,1:end)));xx]; xxx=[x xx]; dlmwrite('${tmpdir}/nuis_out.dat',xxx,'delimiter', ' ', 'precision',10); catch e=1; end; exit(e)"
 
 # Updated:
-matlab -nojvm -nodesktop -nosplash -r "try e=0; format long g; nuis_ts=load('${NUIS_TS}'); nuis_norm=zscore(detrend(nuis_ts)); nuis_deriv1=diff(nuis_norm); nuis_deriv1=[zeros(size(nuis_deriv1(1,1:end)));nuis_deriv1]; nuis_18P=[nuis_norm nuis_deriv1]; nuis_quad=nuis_18P .^2; FULLNUISDF=[nuis_norm nuis_deriv1 nuis_quad]; dlmwrite('${tmpdir}/nuis_out.dat', FULLNUISDF,'delimiter', ' ', 'precision',10); catch e=1; end; exit(e)"
+#matlab -nojvm -nodesktop -nosplash -r "try e=0; format long g; nuis_ts=load('${NUIS_TS}'); nuis_norm=zscore(detrend(nuis_ts)); nuis_deriv1=diff(nuis_norm); nuis_deriv1=[zeros(size(nuis_deriv1(1,1:end)));nuis_deriv1]; nuis_18P=[nuis_norm nuis_deriv1]; nuis_quad=nuis_18P .^2; FULLNUISDF=[nuis_norm nuis_deriv1 nuis_quad]; dlmwrite('${tmpdir}/nuis_out.dat', FULLNUISDF,'delimiter', ' ', 'precision',10); catch e=1; end; exit(e)"
+
+#without MATLAB
+echo ${CODE_DIR}
+python ${CODE_DIR}/runscript/calculate_nuisance_params.py ${NUIS_TS} ${tmpdir}
+
 
 rsync -av $tmpdir/nuis_out.dat "${NUIS_OUT_NOCENSOR}"
 rm -rf ${tmpdir}

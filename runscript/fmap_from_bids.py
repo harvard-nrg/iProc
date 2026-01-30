@@ -123,8 +123,10 @@ def brain_extract(input, output):
         output,
         '-m'
     ]
+    _cmd = sp.list2cmdline(cmd)
+    cmd = f'module load fsl/4.0.3-ncf && {_cmd}'
     logger.info(cmd)
-    commons.check_output(cmd)
+    commons.check_output(cmd, shell=True)
 
 def erode(input, output, invert=True):
     '''
@@ -136,8 +138,8 @@ def erode(input, output, invert=True):
         '-ero',
         output
     ]
-    # the original script was shadowing FSL for this command only (not sure why)
-    cmd = 'module load fsl/4.0.3-ncf && {0}'.format(sp.list2cmdline(cmd))
+    _cmd = sp.list2cmdline(cmd)
+    cmd = f'module load fsl/4.0.3-ncf && {_cmd}'
     logger.info(cmd)
     commons.check_output(cmd, shell=True)
 
