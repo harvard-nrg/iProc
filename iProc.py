@@ -17,7 +17,7 @@ import argparse as ap
 import datetime as dt
 import subprocess as sp
 
-import steps as iProcSteps
+import iproc.steps as iProcSteps
 
 import iproc.qc as qc
 import iproc.bids as bids
@@ -26,7 +26,7 @@ import iproc.executors as executors
 
 from iproc import conf,csvHandler
 from iproc.config import ConfigError
-
+from pathlib import Path
 
 logger = logging.getLogger(os.path.basename(__file__))
 
@@ -1259,18 +1259,15 @@ def main():
         conf.template.midvols_mean = os.path.join(conf.template.TEMPLATE_DIR,f'{conf.iproc.SUB}_midvol_unwarp_2mm.nii.gz')
 
 
-    # get environmental variables from module system (NCF specific)
-    #TODO: is this the best way to do this?
+    # get path to current iProc software
     try:
-        foo = conf.iproc.CODEDIR
+        _ = conf.iproc.CODEDIR
     except ConfigError:
-        conf.iproc.CODEDIR = os.environ['_IPROC_CODEDIR']
+        conf.iproc.CODEDIR = str(Path(__file__).parent.resolve())
 
-    # set environmental variables
-
-        # for freesurfer
+    # set freesurfer ${SUBJECTS_DIR} env var
     os.environ['SUBJECTS_DIR'] = conf.fs.SUBJECTS_DIR
-        # for iProc
+    # specific to slurm environments
     if args.no_srun or args.executor != 'slurm':
         os.environ['IPROC_SRUN'] = "NO"
     else:
