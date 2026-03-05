@@ -416,9 +416,11 @@ need to modify the following lines of code to load the correct version of
 FSL at the appropriate time.</p>
 </div>
 <p>iProc dynamically switches the FSL version at runtime using <a href="https://lmod.readthedocs.io/en/latest/">Lmod</a>. Your 
-environment and/or module names may differ.</p>
+computing environment may not use Lmod, or your module names may differ. You 
+need to understand <em>where</em> and <em>how</em> iProc is switching FSL versions and make 
+the necessary modifications to the iProc source code to suit your environment.</p>
 <h2 id="iprocpy"><code>iProc.py</code></h2>
-<p>Before invoking <a href="https://github.com/harvard-nrg/iProc/blob/main/iProc.py"><code>iProc.py</code></a>, it is assumed that you have already loaded 
+<p>Before running <a href="https://github.com/harvard-nrg/iProc/blob/main/iProc.py"><code>iProc.py</code></a>, it is assumed that you have already loaded 
 FSL <code>v5.0.10</code>.</p>
 <h2 id="fmap_from_bids"><code>fmap_from_bids</code></h2>
 <p>Within <a href="https://github.com/harvard-nrg/iProc/blob/main/runscript/fmap_from_bids.py"><code>runscript/fmap_from_bids.py</code></a>, the FSL version is 
@@ -432,13 +434,12 @@ switched to <code>v6.0.1</code> before running the FSL <code>topup</code> comman
 </code></pre></div>
 <h2 id="fm_unwarp_and_mc_to_midvol"><code>fm_unwarp_and_mc_to_midvol</code></h2>
 <p>In <a href="https://github.com/harvard-nrg/iProc/blob/main/runscript/fm_unwarp_and_mc_to_midvol.sh"><code>runscript/fm_unwarp_and_mc_to_midvol.sh</code></a>, the 
-FSL version is switched to <code>v4.0.3</code> before invoking <code>runscript/fm_uw.sh</code>, then 
-switched back to <code>v5.0.4</code></p>
+FSL version is switched to <code>v4.0.3</code> before running <code>runscript/fm_uw.sh</code></p>
 <div class="highlight"><pre><span></span><code><span class="si">${</span><span class="nv">CODEDIR</span><span class="si">}</span>/modwrap.sh<span class="w"> </span><span class="s1">&#39;module load fsl/4.0.3-ncf&#39;</span><span class="w"> </span><span class="s1">&#39;module load fsl/5.0.4-ncf&#39;</span><span class="w"> </span><span class="o">[</span>...<span class="o">]</span>
 </code></pre></div>
 <h2 id="fmap_fsl_prepare_fieldmap_prep"><code>fmap_fsl_prepare_fieldmap_prep</code></h2>
 <p>In <a href="https://github.com/harvard-nrg/iProc/blob/main/runscript/fmap_fsl_prepare_fieldmap_prep.sh"><code>runscript/fmap_fsl_prepare_fieldmap_prep.sh</code></a>, 
-the FSL version is switched to <code>v5.0.4</code> before invoking the FSL <code>fsl_prepare_fieldmap</code> 
+the FSL version is switched to <code>v5.0.4</code> before running the FSL <code>fsl_prepare_fieldmap</code> 
 command</p>
 <div class="highlight"><pre><span></span><code>module<span class="w"> </span>load<span class="w"> </span>fsl/5.0.4-ncf
 </code></pre></div>

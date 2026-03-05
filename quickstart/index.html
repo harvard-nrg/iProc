@@ -406,10 +406,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#download-and-extract-the-dataset-archive" class="md-nav__link">
+  <a href="#download-and-extract-the-dataset-tarball" class="md-nav__link">
     <span class="md-ellipsis">
       
-        download and extract the dataset archive
+        download and extract the dataset tarball
       
     </span>
   </a>
@@ -617,10 +617,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#download-and-extract-the-dataset-archive" class="md-nav__link">
+  <a href="#download-and-extract-the-dataset-tarball" class="md-nav__link">
     <span class="md-ellipsis">
       
-        download and extract the dataset archive
+        download and extract the dataset tarball
       
     </span>
   </a>
@@ -705,12 +705,12 @@
 <h1 id="welcome-to-the-iproc-quickstart">Welcome to the iProc Quickstart</h1>
 <p>Before you can proceed with the next mind-bending scientific 
 discovery, you need to confirm that you have a fully functioning 
-iProc installation. This guide will help you.</p>
+iProc installation. This guide will help you with that.</p>
 <h2 id="install-iproc">Install iProc</h2>
 <h3 id="clone-the-repository">clone the repository</h3>
 <p>First, you need to download iProc by cloning the repository from 
 GitHub</p>
-<div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>-b<span class="w"> </span>v2.6.0-beta.2<span class="w"> </span>https://github.com/harvard-nrg/iProc
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>-b<span class="w"> </span>v2.6.0-beta.3<span class="w"> </span>https://github.com/harvard-nrg/iProc
 </code></pre></div>
 <h3 id="create-a-virtual-environment">create a virtual environment</h3>
 <p>iProc is primarily written in Python (and some <code>bash</code> scripts). You will need 
@@ -729,8 +729,8 @@ python3.11<span class="w"> </span>-m<span class="w"> </span>venv<span class="w">
 pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span>pip
 </code></pre></div>
 <h3 id="install-iproc_1">install iProc</h3>
-<p>To install iProc and its corresponding Python dependencies, run the following 
-command within your <em>activated virtual environment</em></p>
+<p>To install iProc and its Python dependencies, run the following command within 
+your activated virtual environment</p>
 <div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>.
 </code></pre></div>
 <h3 id="install-external-dependencies">install external dependencies</h3>
@@ -738,7 +738,7 @@ command within your <em>activated virtual environment</em></p>
 <a href="../dependencies/">following page</a>.</p>
 <div class="admonition warning">
 <p class="admonition-title">FSL</p>
-<p>iProc switches FSL several times at runtime. It is <strong>strongly</strong> advised 
+<p>iProc switches FSL versions at runtime. It is <ins><strong>strongly advised</strong></ins>
 that you read the <a href="../fsl/">following page</a> to understand where and how 
 this is done. You will almost certainly need to make modifications to 
 iProc before it will run successfully within your environment.</p>
@@ -747,40 +747,51 @@ iProc before it will run successfully within your environment.</p>
 <p>Run the following command to verify that you are able to launch iProc</p>
 <div class="highlight"><pre><span></span><code>./iProc.py<span class="w"> </span>--help
 </code></pre></div>
-<p>If you're here, you are well on your way to getting iProc up and running. Way
+<p>If you're here, you're well on your way to getting iProc up and running. Way
 to go <img alt="🎉" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f389.svg" title=":tada:" /></p>
 <h2 id="example-dataset">Example dataset</h2>
-<p>We've created an example dataset for you to verfiy that you have a fully 
-functioning version of iProc installed.</p>
 <div class="admonition note">
-<p>The following steps are choreographed and assume that you are running 
-each command within your iProc base directory.</p>
+<p>The following steps are highly choreographed and assume that you are 
+running each command within your iProc base directory.</p>
 </div>
-<h3 id="download-and-extract-the-dataset-archive">download and extract the dataset archive</h3>
-<div class="highlight"><pre><span></span><code>curl<span class="w"> </span>-L<span class="w"> </span>https://dropbox.com/foo.bar<span class="w"> </span>--output<span class="w"> </span>ASDF.tar.gz
-tar<span class="w"> </span>xpfz<span class="w"> </span>ASDF.tar.gz
+<p>We have created an example dataset for you to verfiy that you have a fully 
+functioning version of iProc installed.</p>
+<h3 id="download-and-extract-the-dataset-tarball">download and extract the dataset tarball</h3>
+<p><a class="md-button md-button--primary" href="https://www.dropbox.com/scl/fi/v8w2s0bgpfyg7npm5gxjn/ASDF-v2.6.0.tar.gz?rlkey=juengket5wjnfxu52hpn4lraa&amp;st=io21t27o&amp;dl=0">Download data set <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 20h14v-2H5m14-9h-4V3H9v6H5l7 7z"/></svg></span></a></p>
+<p>Alternatively, you can copy the link to the dataset above and download the 
+tarball using <code>curl</code></p>
+<div class="highlight"><pre><span></span><code>curl<span class="w"> </span>-L<span class="w"> </span><span class="s1">&#39;paste link here&#39;</span><span class="w"> </span>--output<span class="w"> </span>ASDF.tar.gz
+tar<span class="w"> </span>xzf<span class="w"> </span>ASDF.tar.gz
 </code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">FreeSurfer dummy data</p>
+<p>The example data set includes precomputed FreeSurfer results under 
+<code>tutorial_data/fs</code>. If this data is present, iProc will skip running 
+FreeSurfer, which can save several hours of runtime. Remove the <code>fs</code> 
+directory if you want iProc to run FreeSurfer.</p>
+</div>
 <h2 id="run-iproc">Run iProc</h2>
-<p>Now for the part you've been waiting for. Let's run iProc. You got this <img alt="🙌" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f64c.svg" title=":raised_hands:" /></p>
+<p>Now for the moment you've been waiting for — let's run iProc. You got this <img alt="🙌" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f64c.svg" title=":raised_hands:" /></p>
 <h3 id="set-the-base-directory">set the base directory</h3>
-<p>You need to replace the <code>{{BASEDIR}}</code> placeholder within <code>ASDF.cfg</code> (line 3) 
-with the location to your <code>tutorial_data</code> directory</p>
+<p>Replace the <code>{{BASEDIR}}</code> placeholder within <code>ASDF.cfg</code> (line 3) with the 
+location to your <code>tutorial_data</code> directory</p>
 <div class="highlight"><pre><span></span><code><span class="nv">DIR</span><span class="o">=</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/tutorial_data
 sed<span class="w"> </span>-ir<span class="w"> </span>s@<span class="o">{{</span>BASEDIR<span class="o">}}</span>@<span class="si">${</span><span class="nv">DIR</span><span class="si">}</span>@g<span class="w"> </span>tutorial_data/mri_data/ASDF/subject_lists/ASDF.cfg
 </code></pre></div>
 <h3 id="set-the-fsaverage6-directory">set the fsaverage6 directory</h3>
-<p>You also need to replace the <code>{{FSDIR}}</code> placeholder within <code>ASDF.cfg</code> 
-(last line) with the location to the <code>fsaverage6</code> directory under your 
-FreeSurfer installation</p>
-<div class="highlight"><pre><span></span><code><span class="nv">DIR</span><span class="o">=</span><span class="si">${</span><span class="nv">FREESURFER_HOME</span><span class="si">}</span>/fsaverage6
+<p>Replace the <code>{{FSDIR}}</code> placeholder within <code>ASDF.cfg</code> (last line) with the 
+location to the <code>fsaverage6</code> directory under your FreeSurfer installation</p>
+<div class="highlight"><pre><span></span><code><span class="nv">DIR</span><span class="o">=</span><span class="si">${</span><span class="nv">FREESURFER_HOME</span><span class="si">}</span>/subjects/fsaverage6
 sed<span class="w"> </span>-ir<span class="w"> </span>s@<span class="o">{{</span>FSDIR<span class="o">}}</span>@<span class="si">${</span><span class="nv">DIR</span><span class="si">}</span>@g<span class="w"> </span>tutorial_data/mri_data/ASDF/subject_lists/ASDF.cfg
 </code></pre></div>
 <h3 id="run-iproc_1">run iProc</h3>
-<p>The time has come. Run the following command to launch the iProc <code>setup</code> 
-stage</p>
+<p>Now, run the following command to launch the first iProc stage, <code>setup</code></p>
 <div class="highlight"><pre><span></span><code>./iProc.py<span class="w"> </span>--config<span class="w"> </span>tutorial_data/mri_data/subject_lists/ASDF.cfg<span class="w"> </span>--executor<span class="w"> </span><span class="nb">local</span><span class="w"> </span>--stage<span class="w"> </span>setup<span class="w"> </span>--bids<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/bids/sub-ASDF
 </code></pre></div>
-<p>After each stage, iProc will guide you to the next stage.</p>
+<p>After each stage of the pipeline, iProc will print instructions to the screen 
+that will guide you to the next stage. The stages are <code>setup</code>, <code>bet</code>, 
+<code>unwarp_motioncorrect_align</code>, <code>T1_warp_and_mask</code>, <code>combine_and_apply_warp</code>, 
+and <code>filter_and_project</code>.</p>
 
 
 
