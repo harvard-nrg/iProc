@@ -5,12 +5,14 @@
     need to modify the following lines of code to load the correct version of 
     FSL at the appropriate time.
 
-iProc dynamically switches the FSL version at runtime using [Lmod][Lmod]. Your 
-environment and/or module names may differ.
+iProc dynamically switches FSL versions at runtime using [Lmod][Lmod]. Your 
+computing environment may not use Lmod, or your module names may differ. You 
+need to understand _where_ and _how_ iProc is switching FSL versions and make 
+the necessary modifications to the iProc source code to suit your environment.
 
 ## `iProc.py`
 
-Before invoking [`iProc.py`][iProc], it is assumed that you have already loaded 
+Before running [`iProc.py`][iProc], it is assumed that you have already loaded 
 FSL `v5.0.10`.
 
 ## `fmap_from_bids`
@@ -34,8 +36,7 @@ module load fsl/6.0.1-ncf
 ## `fm_unwarp_and_mc_to_midvol`
 
 In [`runscript/fm_unwarp_and_mc_to_midvol.sh`][fm_unwarp_and_mc_to_midvol], the 
-FSL version is switched to `v4.0.3` before invoking `runscript/fm_uw.sh`, then 
-switched back to `v5.0.4`
+FSL version is switched to `v4.0.3` before running `runscript/fm_uw.sh`
 
 ```bash
 ${CODEDIR}/modwrap.sh 'module load fsl/4.0.3-ncf' 'module load fsl/5.0.4-ncf' [...]
@@ -44,7 +45,7 @@ ${CODEDIR}/modwrap.sh 'module load fsl/4.0.3-ncf' 'module load fsl/5.0.4-ncf' [.
 ## `fmap_fsl_prepare_fieldmap_prep`
 
 In [`runscript/fmap_fsl_prepare_fieldmap_prep.sh`][fmap_fsl_prepare_fieldmap_prep], 
-the FSL version is switched to `v5.0.4` before invoking the FSL `fsl_prepare_fieldmap` 
+the FSL version is switched to `v5.0.4` before running the FSL `fsl_prepare_fieldmap` 
 command
 
 ```bash

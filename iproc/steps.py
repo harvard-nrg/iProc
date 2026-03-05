@@ -25,7 +25,7 @@ import datetime
 import collections
 import iproc.commons as commons
 from iproc.bids import sanitize,split_task
-
+from pathlib import Path
 
 #get logger from calling script
 logger = logging.getLogger(__name__)
@@ -1915,15 +1915,21 @@ class jobConstructor(object):
     def fs6_project_to_surface(self, overwrite=True):
 
         print('------- RUNNING MULTI-ECHO STEPS/FS6_PROJECT_TO_SURF -------')
-        logger.debug('fs6_project_to_surface') 
-        #TODO: output to different surfaces 
-        #sesst is best t1   
-    
+        logger.debug('fs6_project_to_surface')
+
+        # create fsaverage6 link if not present
+        subjects_dir = Path(self.conf.fs.SUBJECTS_DIR)
+        target = Path(self.conf.out_atlas.FS6)
+        link = subjects_dir / 'fsaverage6'
+        if not link.exists():
+            logger.info(f'linking {target} to {link}')
+            link.symlink_to(target)
+
         job_spec_list = []
         self.reset_steplog()
 
         sesst = self.conf.T1.T1_SESS
-        subjid=self.conf.iproc.SUB
+        subjid = self.conf.iproc.SUB
         for sessionid,sess in self.scans.sessions():
             for task_type,bold_scan in self.scans.tasks():
                 scan_no = bold_scan['BLD']
@@ -1931,15 +1937,22 @@ class jobConstructor(object):
                 smooth = task['SMOOTHING']
                 bold_no = "%03d" % int(scan_no)
                 task_dirname  = f'{task_type}_{bold_no}'
-                outputdir = os.path.join(self.conf.iproc.FS6DIR, sessionid, task_dirname)
-                boldpath = os.path.join(self.conf.iproc.NAT_RESAMP_DIR, sessionid, task_dirname)
+                outputdir = os.path.join(
+                    self.conf.iproc.FS6DIR,
+                    sessionid,
+                    task_dirname
+                )
+                boldpath = os.path.join(
+                    self.conf.iproc.NAT_RESAMP_DIR,
+                    sessionid,
+                    task_dirname
+                )
                 if not os.path.exists(outputdir):
                     os.makedirs(outputdir) 
                 
-                
                 surfdir = os.path.join(outputdir)
 
-                numechos=self.scans.task_dict[task_type]['NUMECHOS']
+                numechos = self.scans.task_dict[task_type]['NUMECHOS']
                 if int(numechos) == 1:
                     bold = f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat'
                     bold2 = bold + '_resid_bpss'
