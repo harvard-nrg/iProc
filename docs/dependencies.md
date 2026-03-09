@@ -8,18 +8,18 @@ against.
     iProc may run perfectly fine with newer versions of the dependencies 
     shown below, but the results have never been validated.
 
-Software                       | Versions                            | Download
--------------------------------|-------------------------------------|------------------------
-[Python][Python]               | `3.11`                              | [:material-download:][Python DL]
-[GNU Parallel][GNU Parallel]   | `20180522`                          | [:material-download:][GNU Parallel DL]
-[AFNI][AFNI]                   | `16.3.13`                           | [:material-download:][AFNI DL]
-[FSL][FSL]                     | `4.0.3`, `5.0.4`, `5.0.10`, `6.0.1` | [:material-download:][FSL DL]
-[MRIcron][MRIcron]             | `2012_12_12`                        | [:material-download:][MRIcron DL]
-[MRIcroGL][MRIcroGL]           | `2019_09_04`                        | [:material-download:][MRIcroGL DL]
-[FreeSurfer][FreeSurfer]       | `6.0.0`                             | [:material-download:][FreeSurfer DL]
-[ImageMagick][ImageMagick]     | `6.7.8-10`                          | [:material-download:][ImageMagick DL]
-[ANTs][ANTs]                   | `2.4.4`                             | [:material-download:][ANTs DL]
-[dcm2niix][dcm2niix]           | `1.0.20230411`                      | [:material-download:][dcm2niix DL]
+Software          | Versions                            | Download
+------------------|-------------------------------------|------------------------
+[Python][]        | `3.11`                              | [:material-download:][Python DL]
+[GNU Parallel][]  | `20180522`                          | [:material-download:][GNU Parallel DL]
+[AFNI][]          | `16.3.13`                           | [:material-download:][AFNI DL]
+[FSL][]           | `4.0.3`, `5.0.4`, `5.0.10`, `6.0.1` | [:material-download:][FSL DL]
+[MRIcron][]       | `2012_12_12`                        | [:material-download:][MRIcron DL]
+[MRIcroGL][]      | `2019_09_04`                        | [:material-download:][MRIcroGL DL]
+[FreeSurfer][]    | `6.0.0`                             | [:material-download:][FreeSurfer DL]
+[ImageMagick][]   | `6.7.8-10`                          | [:material-download:][ImageMagick DL]
+[ANTs][]          | `2.4.4`                             | [:material-download:][ANTs DL]
+[dcm2niix][]      | `1.0.20230411`                      | [:material-download:][dcm2niix DL]
 
 [Python]: https://www.python.org/
 [Python DL]: https://docs.astral.sh/uv/guides/install-python/
