@@ -703,7 +703,7 @@
 
 
 <h1 id="welcome-to-the-iproc-quickstart">Welcome to the iProc Quickstart</h1>
-<p>Before you can proceed with the next mind-bending scientific 
+<p>Before you can proceed with your next mind-bending scientific 
 discovery, you need to confirm that you have a fully functioning 
 iProc installation. This guide will help you with that.</p>
 <h2 id="install-iproc">Install iProc</h2>
@@ -720,7 +720,7 @@ to create a Python virtual environment before you can move forward.</p>
 <p>One of the iProc dependencies is <code>numpy == 1.25.2</code>, which is compatible
 with Python versions up to Python 3.11. If you want to use a newer 
 version of Python, you will need to change <code>pyproject.toml</code> to install
-<code>numpy == 2.0.0</code> or greater. <ins><strong>Be advised that upgrading dependencies 
+<code>numpy == 1.26.2</code> or greater. <ins><strong>Be advised that upgrading dependencies 
 has not been validated.</strong></ins></p>
 </div>
 <div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>iProc
@@ -757,7 +757,7 @@ running each command within your iProc base directory.</p>
 <p>We have created an example dataset for you to verfiy that you have a fully 
 functioning version of iProc installed.</p>
 <h3 id="download-and-extract-the-dataset-tarball">download and extract the dataset tarball</h3>
-<p><a class="md-button md-button--primary" href="https://www.dropbox.com/scl/fi/ulrgwzg0soeostoaznux6/ASDF-v2.6.0.tar.gz?rlkey=ggqtwjok7kg1eoregq30fojka&amp;st=rcyuyply&amp;dl=0">Download the data set <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 20h14v-2H5m14-9h-4V3H9v6H5l7 7z"/></svg></span></a></p>
+<p><a class="md-button md-button--primary" href="https://www.dropbox.com/scl/fi/myey0owi88uqpa0f2xb00/ASDF-v2.6.0.tar.gz?rlkey=fcl1h6sbmgmg93rn4x6wgvxeu&amp;st=t538zlvx&amp;dl=0">Download the data set <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 20h14v-2H5m14-9h-4V3H9v6H5l7 7z"/></svg></span></a></p>
 <p>Alternatively, you can copy the link to the dataset above and download the 
 tarball using <code>curl</code></p>
 <div class="highlight"><pre><span></span><code>curl<span class="w"> </span>-L<span class="w"> </span><span class="s1">&#39;paste link here&#39;</span><span class="w"> </span>--output<span class="w"> </span>ASDF.tar.gz
@@ -776,17 +776,17 @@ directory if you want iProc to run FreeSurfer.</p>
 <p>Replace the <code>{{BASEDIR}}</code> placeholder within <code>ASDF.cfg</code> (line 3) with the 
 location to your <code>tutorial_data</code> directory</p>
 <div class="highlight"><pre><span></span><code><span class="nv">DIR</span><span class="o">=</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/tutorial_data
-sed<span class="w"> </span>-ir<span class="w"> </span>s@<span class="o">{{</span>BASEDIR<span class="o">}}</span>@<span class="si">${</span><span class="nv">DIR</span><span class="si">}</span>@g<span class="w"> </span>tutorial_data/mri_data/ASDF/subject_lists/ASDF.cfg
+sed<span class="w"> </span>-ir<span class="w"> </span>s@<span class="o">{{</span>BASEDIR<span class="o">}}</span>@<span class="si">${</span><span class="nv">DIR</span><span class="si">}</span>@g<span class="w"> </span>tutorial_data/mri_data_AP/ASDF/subject_lists/ASDF.cfg
 </code></pre></div>
 <h3 id="set-the-fsaverage6-directory">set the fsaverage6 directory</h3>
 <p>Replace the <code>{{FSDIR}}</code> placeholder within <code>ASDF.cfg</code> (last line) with the 
 location to the <code>fsaverage6</code> directory under your FreeSurfer installation</p>
 <div class="highlight"><pre><span></span><code><span class="nv">DIR</span><span class="o">=</span><span class="si">${</span><span class="nv">FREESURFER_HOME</span><span class="si">}</span>/subjects/fsaverage6
-sed<span class="w"> </span>-ir<span class="w"> </span>s@<span class="o">{{</span>FSDIR<span class="o">}}</span>@<span class="si">${</span><span class="nv">DIR</span><span class="si">}</span>@g<span class="w"> </span>tutorial_data/mri_data/ASDF/subject_lists/ASDF.cfg
+sed<span class="w"> </span>-ir<span class="w"> </span>s@<span class="o">{{</span>FSDIR<span class="o">}}</span>@<span class="si">${</span><span class="nv">DIR</span><span class="si">}</span>@g<span class="w"> </span>tutorial_data/mri_data_AP/ASDF/subject_lists/ASDF.cfg
 </code></pre></div>
 <h3 id="run-iproc_1">run iProc</h3>
 <p>Now, run the following command to launch the first iProc stage, <code>setup</code></p>
-<div class="highlight"><pre><span></span><code>./iProc.py<span class="w"> </span>--config<span class="w"> </span>tutorial_data/mri_data/subject_lists/ASDF.cfg<span class="w"> </span>--executor<span class="w"> </span><span class="nb">local</span><span class="w"> </span>--stage<span class="w"> </span>setup<span class="w"> </span>--bids<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/bids/sub-ASDF
+<div class="highlight"><pre><span></span><code>./iProc.py<span class="w"> </span>--config<span class="w"> </span>tutorial_data/mri_data_AP/subject_lists/ASDF.cfg<span class="w"> </span>--executor<span class="w"> </span><span class="nb">local</span><span class="w"> </span>--stage<span class="w"> </span>setup<span class="w"> </span>--bids<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/bids/sub-ASDF
 </code></pre></div>
 <p>After each stage of the pipeline, iProc will print instructions to the screen 
 that will guide you to the next stage. The stages are <code>setup</code>, <code>bet</code>, 
