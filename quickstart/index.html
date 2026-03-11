@@ -406,10 +406,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#download-and-extract-the-dataset" class="md-nav__link">
+  <a href="#download-the-dataset" class="md-nav__link">
     <span class="md-ellipsis">
       
-        download and extract the dataset
+        download the dataset
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#extract-the-dataset" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        extract the dataset
       
     </span>
   </a>
@@ -671,10 +682,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#download-and-extract-the-dataset" class="md-nav__link">
+  <a href="#download-the-dataset" class="md-nav__link">
     <span class="md-ellipsis">
       
-        download and extract the dataset
+        download the dataset
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#extract-the-dataset" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        extract the dataset
       
     </span>
   </a>
@@ -774,7 +796,7 @@ GitHub</p>
 </code></pre></div>
 <h3 id="create-a-virtual-environment">create a virtual environment</h3>
 <p>iProc is primarily written in Python (and some <code>bash</code> scripts). You will need 
-to create a Python virtual environment before you can move forward.</p>
+to create a Python virtual environment before you can proceed.</p>
 <div class="admonition warning">
 <p class="admonition-title">Python version</p>
 <p>One of the iProc dependencies is <code>numpy == 1.25.2</code>, which is compatible
@@ -810,18 +832,29 @@ iProc before it will run successfully within your environment.</p>
 <p>If you're here, you're well on your way to getting iProc up and running. Way
 to go <img alt="🎉" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f389.svg" title=":tada:" /></p>
 <h2 id="example-dataset">Example dataset</h2>
-<div class="admonition note">
-<p>The following steps are highly choreographed and assume that you are 
-running each command within your iProc base directory.</p>
-</div>
 <p>We have created an example dataset for you to verfiy that you have a fully 
 functioning version of iProc installed.</p>
-<h3 id="download-and-extract-the-dataset">download and extract the dataset</h3>
-<p><a class="md-button md-button--primary" href="https://www.dropbox.com/scl/fi/myey0owi88uqpa0f2xb00/ASDF-v2.6.0.tar.gz?rlkey=fcl1h6sbmgmg93rn4x6wgvxeu&amp;st=t538zlvx&amp;dl=0">Download the data set <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 20h14v-2H5m14-9h-4V3H9v6H5l7 7z"/></svg></span></a></p>
-<p>Alternatively, you can copy the link to the dataset above and download the 
-tarball using <code>curl</code></p>
-<div class="highlight"><pre><span></span><code>curl<span class="w"> </span>-L<span class="w"> </span><span class="s1">&#39;paste link here&#39;</span><span class="w"> </span>--output<span class="w"> </span>ASDF.tar.gz
-tar<span class="w"> </span>xzf<span class="w"> </span>ASDF.tar.gz
+<h3 id="download-the-dataset">download the dataset</h3>
+<div class="admonition info">
+<p class="admonition-title">Data Use Terms</p>
+<p>Make sure you have read and agree to the <a href="../data-use-terms/">Data Use Terms</a>
+before proceeding.</p>
+</div>
+<p>Download the dataset from <a href="https://dataverse.harvard.edu">Harvard Dataverse</a></p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> Go to <a href="https://dataverse.harvard.edu">Harvard Dataverse</a>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> Click on the <code>Sign Up</code> link and create an account.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> Log into Dataverse with your new account.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> Go to the <a href="https://doi.org/10.7910/DVN/DWWVSN">iProc Dataset</a>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> Under the <code>Files</code> tab, click on the file <code>ASDF-vX.X.X.tar.gz</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> Click on <code>Access File</code> then <code>Request Access</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> Read the Data Use Terms before clicking <code>Request Access</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> Check your email for approval.</li>
+</ul>
+<h3 id="extract-the-dataset">extract the dataset</h3>
+<p>The dataset is a compressed <code>tar</code> archive. Extract the archive with the
+following command</p>
+<div class="highlight"><pre><span></span><code>tar<span class="w"> </span>xzf<span class="w"> </span>ASDF-vX.X.X.tar.gz
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">FreeSurfer dummy data</p>
