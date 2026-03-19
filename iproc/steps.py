@@ -1769,7 +1769,7 @@ class jobConstructor(object):
                         wb_ts = os.path.join(outputdir,f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat_wb_ts.dat')
                         wbmc_ts = os.path.join(outputdir,f'{sessionid}_bld{bold_no}_reorient_skip_wb_ts_mcoutlier.dat')
                         wb_mask = os.path.join(self.conf.template.TEMPLATE_DIR,'mni_masks','wm_mask_1mm.nii.gz')
-                        resid_out = f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat_mni_wb_resid'
+                        resid_out = f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat_mni_wbonly'
                         mask = os.path.join(self.conf.template.TEMPLATE_DIR,'anat_mni_underlay_brain_mask.nii.gz')
                     elif anat_space in ('NAT222','NAT111'): 
                         outputdir = nat_resamp_dir
@@ -1777,7 +1777,7 @@ class jobConstructor(object):
                         wb_ts = os.path.join(outputdir,f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_mni_wb_ts.dat')
                         wbmc_ts = os.path.join(outputdir,f'{sessionid}_bld{bold_no}_reorient_skip_wb_ts_mcoutlier.dat')
                         wb_mask = os.path.join(self.conf.template.TEMPLATE_DIR,'mni_masks','wb_mask_mpr_reorient.nii.gz')
-                        resid_out = f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat_wb_resid'
+                        resid_out = f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat_wbonly'
                         mask = os.path.join(self.conf.template.TEMPLATE_DIR,'mpr_reorient_brain_mask.nii.gz')
                     else:
                         raise NotImplementedError('anat_space parameter to nuisance_regress() must be T1 or MNI')
@@ -1956,7 +1956,7 @@ class jobConstructor(object):
                 if int(numechos) == 1:
                     bold = f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat'
                     bold2 = bold + '_resid_bpss'
-                    bold3 = bold + '_wb_resid'
+                    bold3 = bold + '_wbonly'
                     bold4 = bold + '_resid'
                     # this is one of the files in the last batch. Not a comprehensive list of files
                     outfiles = [os.path.join(surfdir,f'lh.{bold2}_fsaverage6_sm{smooth}.nii.gz')]
