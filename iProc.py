@@ -110,77 +110,80 @@ def setup(steps,args):
 def QC_fmap(steps,overwrite):
 
     #TODO: would be nice to just get a list made from steps.py
-    merge_filter = 'reorient_skip'
-    # set up qc objects
-    qc_ax = qc.qc_pdf_maker(conf,'ax')
-    qc_sag = qc.qc_pdf_maker(conf,'sag')
-    # create the t1 pages
-    ax_slicer = {'window_dims':'0 100 0 100 5 55'.split(' '),
-                        # <xmin> <xsize> <ymin> <ysize> <zmin> <zsize>
-                        'sample': '1', # nth image to sample
-                        'width': 7} # Number of images across, I think
 
-    sag_slicer = {'window_dims':'0 100 0 100 15 60'.split(' '),
-                        # <xmin> <xsize> <ymin> <ysize> <zmin> <zsize>
-                        'sample': '1', # nth image to sample
-                        'width': 8} # Number of images across, I think
+    preptool = conf.fmap.preptool
+    if preptool != 'none':
+        merge_filter = 'reorient_skip'
+        # set up qc objects
+        qc_ax = qc.qc_pdf_maker(conf,'ax')
+        qc_sag = qc.qc_pdf_maker(conf,'sag')
+        # create the t1 pages
+        ax_slicer = {'window_dims':'0 100 0 100 5 55'.split(' '),
+                            # <xmin> <xsize> <ymin> <ysize> <zmin> <zsize>
+                            'sample': '1', # nth image to sample
+                            'width': 7} # Number of images across, I think
 
-    task_ax_slicer = ax_slicer
-    task_sag_slicer = sag_slicer
-    for sessionid,_ in steps.scans.sessions():
-        # scanno:scan_object for bold scans
-        bold_dict = {int(bold_scan['BLD']):bold_scan for _,bold_scan in steps.scans.tasks()}
-        print(bold_dict)
+        sag_slicer = {'window_dims':'0 100 0 100 15 60'.split(' '),
+                            # <xmin> <xsize> <ymin> <ysize> <zmin> <zsize>
+                            'sample': '1', # nth image to sample
+                            'width': 8} # Number of images across, I think
 
-        for fmap_dir,fmap_scans in steps.scans.fieldmaps():
-            fmap1_no = fmap_scans['FIRST_FMAP']
-            #fmap1_no_pad = "%03d" % int(fmap1_no)
-            fmap1_no_pad = f'{int(fmap1_no):03d}'
-            fmap_dirname = f'{fmap_dir}_{fmap1_no_pad}'
+        task_ax_slicer = ax_slicer
+        task_sag_slicer = sag_slicer
+        for sessionid,_ in steps.scans.sessions():
+            # scanno:scan_object for bold scans
+            bold_dict = {int(bold_scan['BLD']):bold_scan for _,bold_scan in steps.scans.tasks()}
+            print(bold_dict)
 
-            # add BOLD page
-            bold_scan = nearby_bold(bold_dict,int(fmap1_no))
-            scan_no = bold_scan['BLD']
-            task_type = bold_scan['TYPE']
-            #bold_no = "%03d" % int(scan_no)
-            bold_no = f'{int(scan_no):03d}'
-            task_dirname = f'{task_type}_{bold_no}'
-            #spacename = "%s_bld%s_%s" % (sessionid,bold_no,merge_filter)
-            spacename = f'{sessionid}_bld{bold_no}_{merge_filter}' #% (sessionid,bold_no,merge_filter)
+            for fmap_dir,fmap_scans in steps.scans.fieldmaps():
+                fmap1_no = fmap_scans['FIRST_FMAP']
+                #fmap1_no_pad = "%03d" % int(fmap1_no)
+                fmap1_no_pad = f'{int(fmap1_no):03d}'
+                fmap_dirname = f'{fmap_dir}_{fmap1_no_pad}'
 
-            infile = os.path.join(conf.iproc.NATDIR,sessionid,task_dirname,spacename+'.nii.gz')
+                # add BOLD page
+                bold_scan = nearby_bold(bold_dict,int(fmap1_no))
+                scan_no = bold_scan['BLD']
+                task_type = bold_scan['TYPE']
+                #bold_no = "%03d" % int(scan_no)
+                bold_no = f'{int(scan_no):03d}'
+                task_dirname = f'{task_type}_{bold_no}'
+                #spacename = "%s_bld%s_%s" % (sessionid,bold_no,merge_filter)
+                spacename = f'{sessionid}_bld{bold_no}_{merge_filter}' #% (sessionid,bold_no,merge_filter)
 
-# --- IF IT'S A MULTI-EHCO BOLD VOLUME, PICK THE FIRST ECHO! ---
-            if not os.path.isfile(infile):
+                infile = os.path.join(conf.iproc.NATDIR,sessionid,task_dirname,spacename+'.nii.gz')
 
-                infile = os.path.join(conf.iproc.NATDIR,sessionid,task_dirname,spacename+'_e1.nii.gz')
+        # --- IF IT'S A MULTI-EHCO BOLD VOLUME, PICK THE FIRST ECHO! ---
+                if not os.path.isfile(infile):
 
-            task_page_sag = qc.page(infile,task_sag_slicer)
-            task_page_ax = qc.page(infile,task_ax_slicer)
-            qc_sag.pages.append(task_page_sag)
-            qc_ax.pages.append(task_page_ax)
+                    infile = os.path.join(conf.iproc.NATDIR,sessionid,task_dirname,spacename+'_e1.nii.gz')
 
-            # add fmap page
-            fmap_full_dirname = os.path.join(steps.conf.iproc.NATDIR,sessionid,fmap_dirname)
+                task_page_sag = qc.page(infile,task_sag_slicer)
+                task_page_ax = qc.page(infile,task_ax_slicer)
+                qc_sag.pages.append(task_page_sag)
+                qc_ax.pages.append(task_page_ax)
 
-            if steps.conf.fmap.PREPTOOL == 'topup':
-                target_fmap_nii = f'{fmap_full_dirname}/{sessionid}_{fmap1_no_pad}_fieldmap_masked.nii.gz' #topup not masked
-            else:
-                target_fmap_nii = f'{fmap_full_dirname}/{sessionid}_{fmap1_no_pad}_fieldmap.nii.gz'
+                # add fmap page
+                fmap_full_dirname = os.path.join(steps.conf.iproc.NATDIR,sessionid,fmap_dirname)
 
-            fmap_page_sag = qc.page(target_fmap_nii,task_sag_slicer)
-            fmap_page_ax = qc.page(target_fmap_nii,task_ax_slicer)
-            qc_sag.pages.append(fmap_page_sag)
-            qc_ax.pages.append(fmap_page_ax)
-    returnval = []
-    ax_job = qc_ax.produce_pdf('fmap',save_intermediates=steps.args.no_remove_files,overwrite=overwrite)
-    if ax_job:
-        returnval.append(ax_job)
-    sag_job = qc_sag.produce_pdf('fmap',save_intermediates=steps.args.no_remove_files,overwrite=overwrite)
-    if sag_job:
-        returnval.append(sag_job)
-    logger.debug(returnval)
-    return returnval
+                if steps.conf.fmap.PREPTOOL == 'topup':
+                    target_fmap_nii = f'{fmap_full_dirname}/{sessionid}_{fmap1_no_pad}_fieldmap_masked.nii.gz' #topup not masked
+                else:
+                    target_fmap_nii = f'{fmap_full_dirname}/{sessionid}_{fmap1_no_pad}_fieldmap.nii.gz'
+
+                fmap_page_sag = qc.page(target_fmap_nii,task_sag_slicer)
+                fmap_page_ax = qc.page(target_fmap_nii,task_ax_slicer)
+                qc_sag.pages.append(fmap_page_sag)
+                qc_ax.pages.append(fmap_page_ax)
+        returnval = []
+        ax_job = qc_ax.produce_pdf('fmap',save_intermediates=steps.args.no_remove_files,overwrite=overwrite)
+        if ax_job:
+            returnval.append(ax_job)
+        sag_job = qc_sag.produce_pdf('fmap',save_intermediates=steps.args.no_remove_files,overwrite=overwrite)
+        if sag_job:
+            returnval.append(sag_job)
+        logger.debug(returnval)
+        return returnval
 
 def nearby_bold(bold_dict,scan_no):
     # Takes in a bold dict which indexes bold_scan objects by 
@@ -288,8 +291,9 @@ def unwarp_motioncorrect_align(steps,args):
     # create mean bold midvol template
     merge_filter = 'reorient_skip_mc_unwarp_midvol_to_midvoltarg'
     # flirt output from fm_unwarp_and_mc_to_midvol
-    merge_glob1 = conf.iproc.NATDIR + '/{SESS}/{TASK}/{SESS}_bld???_{STEPS}.nii.gz'.format(SESS='*',TASK='*',STEPS=merge_filter)
-    merge_glob2 = conf.iproc.NATDIR + '/{SESS}/{TASK}/{SESS}_bld???_{STEPS}_e?.nii.gz'.format(SESS='*',TASK='*',STEPS=merge_filter)
+    merge_glob1 = conf.iproc.NATDIR + f'/*/*/*_bld???_{merge_filter}.nii.gz'
+    merge_glob2 = conf.iproc.NATDIR + f'/*/*/*_bld???_{merge_filter}_e?.nii.gz'
+
     globfiles_tomerge = get_glob_or(args,merge_glob1,merge_glob2)
 
     # was standard_midvol_on_midvoltarg_allscansmean
@@ -321,7 +325,7 @@ def unwarp_motioncorrect_align(steps,args):
     # product of registering the BOLD to the mean of BOLD midvols
     print('*****QC2*****')
     merge_filter='on_midmean'
-    merge_glob = conf.iproc.NATDIR + '/{SESS}/{TASK}/{SESS}_bld???_{STEPS}.nii.gz'.format(SESS='*',TASK='*',STEPS=merge_filter)
+    merge_glob = conf.iproc.NATDIR + f'/*/*/*_bld???_{merge_filter}.nii.gz'
     globfiles_tomerge = get_glob(args,merge_glob)
     # was standard_midvol_on_allscansmean.nii.gz
     # going to just call meanbold, don't think this is used later on in the pipeline anyway
@@ -522,8 +526,8 @@ def combine_and_apply_warp(steps,args):
     ## NAT222
     # mean_out from combine_warps_post
     merge_filter = 'reorient_skip_mc_unwarp_anat_mean'
-    merge_glob1 = conf.iproc.NAT_RESAMP_DIR + '/{SESS}/{TASK}/{SESS}_bld???_{STEPS}.nii.gz'.format(SESS='*',TASK='*',STEPS=merge_filter)
-    merge_glob2 = conf.iproc.NAT_RESAMP_DIR + '/{SESS}/{TASK}/{SESS}_bld???_{STEPS}_e?.nii.gz'.format(SESS='*',TASK='*',STEPS=merge_filter)
+    merge_glob1 = conf.iproc.NAT_RESAMP_DIR + f'/*/*/*_bld???_{merge_filter}.nii.gz'
+    merge_glob2 = conf.iproc.NAT_RESAMP_DIR + f'/*/*/*_bld???_{merge_filter}_e?.nii.gz'
     globfiles_tomerge = get_glob_or(args,merge_glob1,merge_glob2)
     template_fname = f'NAT{conf.out_atlas.RESOLUTION}_meanvol_allscansmean.nii.gz'
     template = os.path.join(conf.template.TEMPLATE_DIR,template_fname)
@@ -558,8 +562,8 @@ def combine_and_apply_warp(steps,args):
     # NAT222_midvol
     # midvol_out from combine_warps_post
     merge_filter='reorient_skip_mc_unwarp_anat_vol'
-    merge_glob1 = conf.iproc.NAT_RESAMP_DIR + '/{SESS}/{TASK}/{SESS}_bld???_{STEPS}???.nii.gz'.format(SESS='*',TASK='*',STEPS=merge_filter)
-    merge_glob2 = conf.iproc.NAT_RESAMP_DIR + '/{SESS}/{TASK}/{SESS}_bld???_{STEPS}???_e?.nii.gz'.format(SESS='*',TASK='*',STEPS=merge_filter)
+    merge_glob1 = conf.iproc.NAT_RESAMP_DIR + f'/*/*/*_bld???_{merge_filter}???.nii.gz'
+    merge_glob2 = conf.iproc.NAT_RESAMP_DIR + f'/*/*/*_bld???_{merge_filter}???_e?.nii.gz'
     globfiles_tomerge = get_glob_or(args,merge_glob1,merge_glob2)
     template_fname = f'NAT{conf.out_atlas.RESOLUTION}_midvol_allscansmean.nii.gz'
     template = os.path.join(conf.template.TEMPLATE_DIR,template_fname)
@@ -584,8 +588,8 @@ def combine_and_apply_warp(steps,args):
     ## MNI
     # MNI222_meanvol
     merge_filter = 'reorient_skip_mc_unwarp_anat_mni_mean'
-    merge_glob1 = conf.iproc.MNI_RESAMP_DIR + '/{SESS}/{TASK}/{SESS}_bld???_{STEPS}.nii.gz'.format(SESS='*',TASK='*',STEPS=merge_filter)
-    merge_glob2 = conf.iproc.MNI_RESAMP_DIR + '/{SESS}/{TASK}/{SESS}_bld???_{STEPS}_e?.nii.gz'.format(SESS='*',TASK='*',STEPS=merge_filter)
+    merge_glob1 = conf.iproc.MNI_RESAMP_DIR + f'/*/*/*_bld???_{merge_filter}.nii.gz'
+    merge_glob2 = conf.iproc.MNI_RESAMP_DIR + f'/*/*/*_bld???_{merge_filter}_e?.nii.gz'
     globfiles_tomerge = get_glob_or(args,merge_glob1,merge_glob2)
     # from QC/iProc_QC_MNIspace_meanBOLDS.py
     template_fname = f'MNI{conf.out_atlas.RESOLUTION}_meanvol_allscansmean.nii.gz'
@@ -620,8 +624,8 @@ def combine_and_apply_warp(steps,args):
 
     # MNI222_midvol
     merge_filter='reorient_skip_mc_unwarp_anat_mni_vol'
-    merge_glob1 = conf.iproc.MNI_RESAMP_DIR + '/{SESS}/{TASK}/{SESS}_bld???_{STEPS}???.nii.gz'.format(SESS='*',TASK='*',STEPS=merge_filter)
-    merge_glob2 = conf.iproc.MNI_RESAMP_DIR + '/{SESS}/{TASK}/{SESS}_bld???_{STEPS}???_e?.nii.gz'.format(SESS='*',TASK='*',STEPS=merge_filter)
+    merge_glob1 = conf.iproc.MNI_RESAMP_DIR + f'/*/*/*_bld???_{merge_filter}???.nii.gz'
+    merge_glob2 = conf.iproc.MNI_RESAMP_DIR + f'/*/*/*_bld???_{merge_filter}???_e?.nii.gz'
     globfiles_tomerge = get_glob_or(args,merge_glob1,merge_glob2)
     template_fname = f'MNI{conf.out_atlas.RESOLUTION}_midvol_allscansmean.nii.gz'
     templatefile = os.path.join(conf.template.TEMPLATE_DIR,template_fname)
@@ -1212,7 +1216,7 @@ def main():
     # parse the configuration file
     conf.parse(os.path.expanduser(args.config_file))
     # set variables with fully deterministic locations
-    allowed_fmap_regimes = ['topup','fsl_prepare_fieldmap']
+    allowed_fmap_regimes = ['topup','fsl_prepare_fieldmap','none']
     if not conf.fmap.preptool in allowed_fmap_regimes:
         logger.error(f'{args.config_file} must have a fmap:preptool value matching one of {allowed_fmap_regimes}')
         exit(1)
@@ -1283,7 +1287,8 @@ def main():
     scans = csvHandler.scansHandler(conf)
     scans.ingest_task_csv(conf.csv.TASKTYPELIST)
     
-    scans.ingest_bold_csv(conf.csv.SCANLIST)
+    preptool = conf.fmap.preptool
+    scans.ingest_bold_csv(conf.csv.SCANLIST,preptool)
     midvol_boldno = int(conf.template.MIDVOL_BOLDNO)
 
     # gross but prevents errors caused by user typos
@@ -1302,7 +1307,7 @@ def main():
 
     if args.bids:
         # add 'BIDS_ID' attribute
-        bids.match_scan_no_to_bids(args.bids,scans)
+        bids.match_scan_no_to_bids(args.bids,scans,conf.fmap.preptool)
 
     # run the stage specified by the user
     steps = iProcSteps.jobConstructor(conf,scans,args)

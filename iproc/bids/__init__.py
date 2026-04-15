@@ -8,7 +8,7 @@ import collections as col
 import iproc.commons as commons
 logger = logging.getLogger(__name__)
 
-def match_scan_no_to_bids(bids_base,scans):
+def match_scan_no_to_bids(bids_base,scans,preptool):
     for sessionid,sess in scans.sessions():
         #set corresponding BIDS subdir
         bids_sessionid = sanitize(sessionid)
@@ -59,32 +59,33 @@ def match_scan_no_to_bids(bids_base,scans):
             series_no = get_json_entity(json,'SeriesNumber')
             scan_no_to_json[series_no]=bids_pair
 
-        # Compile list of phase_SeriesNumber:BIDS_run_no
-        bids_fmap_fullpath = os.path.join(bids_base,bids_sessionid_dirname,'fmap')
-        bids_json_fglob = '*.json'.format(SUB=sess.subjid,SES=bids_sessionid)
-        bids_json_glob = os.path.join(bids_fmap_fullpath,bids_json_fglob)
+        if preptool != 'none':
+            # Compile list of phase_SeriesNumber:BIDS_run_no
+            bids_fmap_fullpath = os.path.join(bids_base,bids_sessionid_dirname,'fmap')
+            bids_json_fglob = '*.json'.format(SUB=sess.subjid,SES=bids_sessionid)
+            bids_json_glob = os.path.join(bids_fmap_fullpath,bids_json_fglob)
 
-        fmap_jsons = glob.glob(bids_json_glob)
-        if not fmap_jsons:
-            logger.error(f'no JSON file found for {bids_json_glob}')
-            raise IOError
+            fmap_jsons = glob.glob(bids_json_glob)
+            if not fmap_jsons:
+                logger.error(f'no JSON file found for {bids_json_glob}')
+                raise IOError
 
-        fmap_no_to_nifti = {}
-        for json_fname in fmap_jsons:
-            # get filenames by aquisition number
-            series_no = get_json_entity(json_fname,'SeriesNumber')
-                
-            nifti_filename = json_fname.rstrip('.json') + '.nii.gz'
-            if not os.path.exists(nifti_filename):
-                raise ValueError
-            existing_fmap = fmap_no_to_nifti.get(series_no)
-            logger.debug(f'{existing_fmap} {json_fname} {series_no}')
-            if not existing_fmap:
-                fmap_no_to_nifti[series_no] = nifti_filename 
-            elif type(existing_fmap) == str:
-                fmap_no_to_nifti[series_no] = [existing_fmap,nifti_filename]
-            else:
-                fmap_no_to_nifti[series_no].append(nifti_filename)
+            fmap_no_to_nifti = {}
+            for json_fname in fmap_jsons:
+                # get filenames by aquisition number
+                series_no = get_json_entity(json_fname,'SeriesNumber')
+                    
+                nifti_filename = json_fname.rstrip('.json') + '.nii.gz'
+                if not os.path.exists(nifti_filename):
+                    raise ValueError
+                existing_fmap = fmap_no_to_nifti.get(series_no)
+                logger.debug(f'{existing_fmap} {json_fname} {series_no}')
+                if not existing_fmap:
+                    fmap_no_to_nifti[series_no] = nifti_filename 
+                elif type(existing_fmap) == str:
+                    fmap_no_to_nifti[series_no] = [existing_fmap,nifti_filename]
+                else:
+                    fmap_no_to_nifti[series_no].append(nifti_filename)
 
         # Compile list of anat_SeriesNumber:BIDS_run_no
         bids_anat_fullpath = os.path.join(bids_base,bids_sessionid_dirname,'anat')
@@ -157,15 +158,17 @@ def match_scan_no_to_bids(bids_base,scans):
                 errname=f'BIDS taskname "{task}" does not match boldscan task name "{task_name}" for sessid {sessionid}, scan {scan_no}'
                 raise IOError(errname)
             bold_scan['BIDS_ID'] = run
-            # correct naively-enumerated FMAP directories:
-            fmap1_series_no = bold_scan['FIRST_FMAP']
-            bold_scan['FMAP_DIR'] = 'FMAP'.format(fmap1_series_no)
-            
-        for fmap_dir,fmap_scan in scans.fieldmaps():
-            
-            
-            fmap_scan['FIRST_BIDS_FNAME'] = load_fmap_file_to_scan(fmap_no_to_nifti,fmap_scan,'FIRST_FMAP')
-            fmap_scan['SECOND_BIDS_FNAME'] = load_fmap_file_to_scan(fmap_no_to_nifti,fmap_scan,'SECOND_FMAP')
+
+            if preptool != 'none':
+                # correct naively-enumerated FMAP directories:
+                fmap1_series_no = bold_scan['FIRST_FMAP']
+                bold_scan['FMAP_DIR'] = 'FMAP'.format(fmap1_series_no)
+        
+        if preptool != 'none':
+            for fmap_dir,fmap_scan in scans.fieldmaps():
+                
+                fmap_scan['FIRST_BIDS_FNAME'] = load_fmap_file_to_scan(fmap_no_to_nifti,fmap_scan,'FIRST_FMAP')
+                fmap_scan['SECOND_BIDS_FNAME'] = load_fmap_file_to_scan(fmap_no_to_nifti,fmap_scan,'SECOND_FMAP')
 
 def load_fmap_file_to_scan(fmap_no_to_nifti,fmap_scan, scan_id):
     ''' 

@@ -274,6 +274,8 @@ class jobConstructor(object):
                     ])
                     ## 2025.03.05: output-maskcopy added from Lauren for bids integration
                     logger.info(f'fmapp file is {bids_fmapp_file}')
+                elif preptool == 'none':
+                    print('----NOT USING FIELDMAP----')
                 else:
                     raise Exception(f'unknown preptool {preptool}')
                 # create output directory
@@ -478,54 +480,57 @@ class jobConstructor(object):
             script = os.path.join(self.conf.iproc.CODEDIR, 'runscript', 'xnat_to_nii_gz_fm_topup.sh')
         elif preptool == 'fsl_prepare_fieldmap':
             script = os.path.join(self.conf.iproc.CODEDIR, 'runscript', 'xnat_to_nii_gz_fm.sh')
+        elif preptool == 'none':
+            print('No field maps option selected...')
         else:
             raise Exception(f'unknown preptool {preptool}')
-        for sessionid,sess in self.scans.sessions():
-            for fmap_dir,fmap_scans in self.scans.fieldmaps():
-                fmap1_no = int(fmap_scans['FIRST_FMAP'])
-                fmap2_no = int(fmap_scans['SECOND_FMAP'])
-                fmap1_no_pad = f'{fmap1_no:03d}'
-                fmap_dirname = f'{fmap_dir}_{fmap1_no_pad}'
-                file_dir = os.path.join(self.conf.iproc.NATDIR, sessionid, fmap_dirname)
-                # phase scan is usually right after FMAP_MAG(m for magnitude).
-                # this is the second, smaller set of field map dicoms in xnat
-                # Phase scan has half the number of slices as Mag.
-                logger.debug(json.dumps(fmap_scans, indent=2))
-                if fmap1_no == 0 or fmap2_no == 0:
-                    raise ValueError(f'something went wrong with fieldmap type assignment. \n {fmap1_no},{fmap2_no} \n {fmap_scans}')
-                outfile = f'{file_dir}/{sessionid}_{fmap1_no_pad}_fieldmap' #removing .nii.gz affix to also make masked version for QC 2025.06.11 JS
-                outfiles = [f'{outfile}.nii.gz']
-                ## added from LD for bids integration on 2025.03.05
-                mask_copy_nii = f'{file_dir}/{sessionid}_{fmap1_no_pad}_mag_img_brain_mask.nii.gz'
-                ##
+        if preptool != 'none':
+            for sessionid,sess in self.scans.sessions():
+                for fmap_dir,fmap_scans in self.scans.fieldmaps():
+                    fmap1_no = int(fmap_scans['FIRST_FMAP'])
+                    fmap2_no = int(fmap_scans['SECOND_FMAP'])
+                    fmap1_no_pad = f'{fmap1_no:03d}'
+                    fmap_dirname = f'{fmap_dir}_{fmap1_no_pad}'
+                    file_dir = os.path.join(self.conf.iproc.NATDIR, sessionid, fmap_dirname)
+                    # phase scan is usually right after FMAP_MAG(m for magnitude).
+                    # this is the second, smaller set of field map dicoms in xnat
+                    # Phase scan has half the number of slices as Mag.
+                    logger.debug(json.dumps(fmap_scans, indent=2))
+                    if fmap1_no == 0 or fmap2_no == 0:
+                        raise ValueError(f'something went wrong with fieldmap type assignment. \n {fmap1_no},{fmap2_no} \n {fmap_scans}')
+                    outfile = f'{file_dir}/{sessionid}_{fmap1_no_pad}_fieldmap' #removing .nii.gz affix to also make masked version for QC 2025.06.11 JS
+                    outfiles = [f'{outfile}.nii.gz']
+                    ## added from LD for bids integration on 2025.03.05
+                    mask_copy_nii = f'{file_dir}/{sessionid}_{fmap1_no_pad}_mag_img_brain_mask.nii.gz'
+                    ##
 
-                if self._outfiles_skip(overwrite, outfiles):
-                    continue
-                #Create Output Directory
-                if not os.path.exists(file_dir):
-                    os.makedirs(file_dir)
-                
-                cmd = [
-                    #os.path.join(self.conf.iproc.CODEDIR,'modwrap.sh'), 
-                    #'module load fsl/4.0.3-ncf', 
-                    #'module load fsl/5.0.4-ncf',
-                    script,
-                    sessionid,
-                    str(fmap1_no),
-                    str(fmap2_no),
-                    file_dir,
-                    self.conf.iproc.CODEDIR,
-                    self.conf.xnat.XNAT_ALIAS,
-                    self.conf.xnat.XNAT_PROJECT,
-                    outfile,
-                    self.conf.iproc.QDIR,
-                    self.conf.iproc.OUTDIR, # 2025.03.05: added for fmap_topup_prep input by Lauren to match above
-                    mask_copy_nii  # 2025.03.05: added by Lauren for QC FMAP PDF
-                ]
-                print(json.dumps(cmd, indent=2))
+                    if self._outfiles_skip(overwrite, outfiles):
+                        continue
+                    #Create Output Directory
+                    if not os.path.exists(file_dir):
+                        os.makedirs(file_dir)
+                    
+                    cmd = [
+                        #os.path.join(self.conf.iproc.CODEDIR,'modwrap.sh'), 
+                        #'module load fsl/4.0.3-ncf', 
+                        #'module load fsl/5.0.4-ncf',
+                        script,
+                        sessionid,
+                        str(fmap1_no),
+                        str(fmap2_no),
+                        file_dir,
+                        self.conf.iproc.CODEDIR,
+                        self.conf.xnat.XNAT_ALIAS,
+                        self.conf.xnat.XNAT_PROJECT,
+                        outfile,
+                        self.conf.iproc.QDIR,
+                        self.conf.iproc.OUTDIR, # 2025.03.05: added for fmap_topup_prep input by Lauren to match above
+                        mask_copy_nii  # 2025.03.05: added by Lauren for QC FMAP PDF
+                    ]
+                    print(json.dumps(cmd, indent=2))
 
-                logfile_base = self._io_file_fmt(cmd)
-                job_spec_list.append(JobSpec(cmd, logfile_base, outfiles))
+                    logfile_base = self._io_file_fmt(cmd)
+                    job_spec_list.append(JobSpec(cmd, logfile_base, outfiles))
         self.scans.reset_default_sessionid()
         return job_spec_list
 
@@ -628,67 +633,82 @@ class jobConstructor(object):
         midvol_sess = self.scans.scan_by_session[midvol_sessid]
         stripped_midvol_num = int(self.conf.template.MIDVOL_BOLDNO)
         midvol_scan = midvol_sess.bold_scans[stripped_midvol_num]
-        fm_tasktype = midvol_scan['FMAP_DIR']
-        
-        fm_bold_no = "%03d" % int(midvol_scan['FIRST_FMAP'])
-        fm_dirname = f'{fm_tasktype}_{fm_bold_no}'
-        fdir = os.path.join(self.conf.iproc.NATDIR,midvol_sessid,fm_dirname)
 
-        img = os.path.join(self.conf.template.TEMPLATE_DIR,f'{self.conf.iproc.SUB}_D01_{bold_name}_bld{self.conf.template.MIDVOL_BOLDNO}_midvol.nii.gz')
-        dest_dir = os.path.dirname(img)
-        warp_dir = dest_dir + f'/fm_unwarp{self.conf.template.MIDVOL_BOLDNO}'
-        unwarped_img = os.path.join(self.conf.template.TEMPLATE_DIR,f'{self.conf.iproc.SUB}_D01_{bold_name}_midvol_unwarp.nii.gz')
-        #unwarped_img = os.path.join(self.conf.template.TEMPLATE_DIR,f'{self.conf.iproc.SUB}_midvol_unwarp.nii.gz')
-        # TODO: finish this, make naming align to conventions.
-        outfiles = [unwarped_img]
-        if self._outfiles_skip(overwrite,outfiles):
-            return []
+        preptool = self.conf.fmap.PREPTOOL
 
-        fsl_unwarp_direction = self._unwarp_direction_from_sidecar(self.conf.template.TEMPLATE_DIR,midvol_sessid,self.conf.template.MIDVOL_BOLDNO)
+        ## --- ADDED 260402 by JS, just copy midvol to midvol_unwarp! --- ###
+        if preptool == 'none': 
+            img = os.path.join(self.conf.template.TEMPLATE_DIR,f'{self.conf.iproc.SUB}_D01_{bold_name}_bld{self.conf.template.MIDVOL_BOLDNO}_midvol.nii.gz')
+            dest_dir = os.path.dirname(img)
+            warp_dir = dest_dir + f'/fm_unwarp{self.conf.template.MIDVOL_BOLDNO}'
+            unwarped_img = os.path.join(self.conf.template.TEMPLATE_DIR,f'{self.conf.iproc.SUB}_D01_{bold_name}_midvol_unwarp.nii.gz')
 
-        rmfiles = self._get_rmfiles(stepname)
-        self._set_rmfiles('fm_unwarp_and_mc_to_midvol',unwarped_img) 
+            shutil.copy2(img,unwarped_img)
+            print('------- NO FIELD MAP: copying midvol to midvol_unwarp -------')
 
-        # --- IS IT MULTIECHO?? ---
-        dwellPath = os.path.join(self.conf.template.TEMPLATE_DIR,f'{midvol_sessid}_bld{self.conf.template.MIDVOL_BOLDNO}_dwellTime_e1.sec')
-        print(dwellPath)
 
-        if os.path.isfile(dwellPath):
-            isME = '1'
         else:
-            isME = '0'
+            fm_tasktype = midvol_scan['FMAP_DIR']
+        
+            fm_bold_no = "%03d" % int(midvol_scan['FIRST_FMAP'])
+            fm_dirname = f'{fm_tasktype}_{fm_bold_no}'
+            fdir = os.path.join(self.conf.iproc.NATDIR,midvol_sessid,fm_dirname)
 
-        templateOut = os.path.join(self.conf.template.TEMPLATE_DIR,f'{self.conf.iproc.SUB}_midvol_unwarp.nii.gz')
+            img = os.path.join(self.conf.template.TEMPLATE_DIR,f'{self.conf.iproc.SUB}_D01_{bold_name}_bld{self.conf.template.MIDVOL_BOLDNO}_midvol.nii.gz')
+            dest_dir = os.path.dirname(img)
+            warp_dir = dest_dir + f'/fm_unwarp{self.conf.template.MIDVOL_BOLDNO}'
+            unwarped_img = os.path.join(self.conf.template.TEMPLATE_DIR,f'{self.conf.iproc.SUB}_D01_{bold_name}_midvol_unwarp.nii.gz')
+            #unwarped_img = os.path.join(self.conf.template.TEMPLATE_DIR,f'{self.conf.iproc.SUB}_midvol_unwarp.nii.gz')
+            # TODO: finish this, make naming align to conventions.
+            outfiles = [unwarped_img]
+            if self._outfiles_skip(overwrite,outfiles):
+                return []
 
-        print(templateOut)
+            fsl_unwarp_direction = self._unwarp_direction_from_sidecar(self.conf.template.TEMPLATE_DIR,midvol_sessid,self.conf.template.MIDVOL_BOLDNO)
 
-        run_cmd = [
-            os.path.join(self.conf.iproc.CODEDIR, 'modwrap.sh'),
-            'module load fsl/4.0.3-ncf',
-            'module load fsl/5.0.4-ncf',
-            os.path.join(self.conf.iproc.CODEDIR, 'runscript', 'fm_unw.sh'),
-            midvol_sessid,
-            fdir,
-            img,
-            unwarped_img,
-            fm_bold_no,
-            dest_dir,
-            warp_dir,
-            fsl_unwarp_direction,
-            isME
+            rmfiles = self._get_rmfiles(stepname)
+            self._set_rmfiles('fm_unwarp_and_mc_to_midvol',unwarped_img) 
 
-        ]
+            # --- IS IT MULTIECHO?? ---
+            dwellPath = os.path.join(self.conf.template.TEMPLATE_DIR,f'{midvol_sessid}_bld{self.conf.template.MIDVOL_BOLDNO}_dwellTime_e1.sec')
+            print(dwellPath)
 
-        print(run_cmd)
-        self.scans.set_midvol(self.conf)
-        logfile_base = self._io_file_fmt(run_cmd)
+            if os.path.isfile(dwellPath):
+                isME = '1'
+            else:
+                isME = '0'
 
-        if not self.args.no_remove_files:
-            run_cmd.append(" ".join(rmfiles))
+            templateOut = os.path.join(self.conf.template.TEMPLATE_DIR,f'{self.conf.iproc.SUB}_midvol_unwarp.nii.gz')
 
-        job_spec_list = [JobSpec(run_cmd,logfile_base,outfiles,rmfiles)]
-        self.scans.reset_default_sessionid()
-        return job_spec_list
+            print(templateOut)
+
+            run_cmd = [
+                os.path.join(self.conf.iproc.CODEDIR, 'modwrap.sh'),
+                'module load fsl/4.0.3-ncf',
+                'module load fsl/5.0.4-ncf',
+                os.path.join(self.conf.iproc.CODEDIR, 'runscript', 'fm_unw.sh'),
+                midvol_sessid,
+                fdir,
+                img,
+                unwarped_img,
+                fm_bold_no,
+                dest_dir,
+                warp_dir,
+                fsl_unwarp_direction,
+                isME
+
+            ]
+
+            print(run_cmd)
+            self.scans.set_midvol(self.conf)
+            logfile_base = self._io_file_fmt(run_cmd)
+
+            if not self.args.no_remove_files:
+                run_cmd.append(" ".join(rmfiles))
+
+            job_spec_list = [JobSpec(run_cmd,logfile_base,outfiles,rmfiles)]
+            self.scans.reset_default_sessionid()
+            return job_spec_list
     
     def create_upsamped_midvol_target(self, overwrite=True):
 
@@ -749,12 +769,21 @@ class jobConstructor(object):
                 scan_no = bold_scan['BLD']
                 bold_no = "%03d" % int(scan_no)
                 task_dirname  = f'{task_type}_{bold_no}'
-                fm_bold_no = "%03d" % int(bold_scan['FIRST_FMAP'])
                 numvol=self.scans.task_dict[task_type]['NUMVOL']
                 
-                fm_task_type = bold_scan['FMAP_DIR']
-                fm_dirname = f'{fm_task_type}_{fm_bold_no}'
+                if self.conf.fmap.PREPTOOL != 'none':
+                    nofm = 0
+                    nofm_str = '0'
+                    fm_bold_no = f'{int(bold_scan["FIRST_FMAP"]):03d}'
+                    fm_task_type = bold_scan['FMAP_DIR']
 
+                else:
+                    nofm = 1
+                    nofm_str = '1'
+                    fm_bold_no = '000'
+                    fm_task_type = 'FOO'
+
+                fm_dirname = f'{fm_task_type}_{fm_bold_no}'
                 fdir = os.path.join(self.conf.iproc.NATDIR,sessionid,fm_dirname)
                 outputdir = os.path.join(self.conf.iproc.NATDIR,sessionid,task_dirname)
 
@@ -786,9 +815,13 @@ class jobConstructor(object):
                     dest_dir = os.path.dirname(midvol)
                     warp_dir = dest_dir + f'/fm_unwarp{bold_no}'
                     EF_UD = os.path.join(warp_dir, 'EF_UD_warp.nii.gz')
-                    outfiles.append(EF_UD)
+
+                    if nofm == 0:
+                        outfiles.append(EF_UD)
+
                     if self._outfiles_skip(overwrite, outfiles):
                         continue
+
                     # if reorient_skip_mc.mat dir exists, delete, so we don't keep 
                     # creating endless reorient_skip_mc.mat+++++++ directories
                     if os.path.isdir(mc_out_matdir):   
@@ -802,7 +835,10 @@ class jobConstructor(object):
                     if not os.path.exists(outputdir):
                         os.makedirs(outputdir)
 
-                    fsl_unwarp_direction = self._unwarp_direction_from_sidecar(outputdir, sessionid, bold_no)
+                    if nofm == 0:
+                        fsl_unwarp_direction = 'foo' ##placeholder
+                    else:
+                        fsl_unwarp_direction = self._unwarp_direction_from_sidecar(outputdir, sessionid, bold_no)
 
                     self._set_rmfiles('combine_warps_post_MNI', mc_mats)
                     rmfiles = self._get_rmfiles(stepname)
@@ -831,7 +867,8 @@ class jobConstructor(object):
                         fsl_unwarp_direction,
                         '0',
                         FD_THRESH,
-                        FD_LABEL] #0 for single echo
+                        FD_LABEL,
+                        nofm_str] #'0' for single-echo
            
                     logfile_base = self._io_file_fmt(cmd)
                     if not self.args.no_remove_files:
@@ -868,9 +905,13 @@ class jobConstructor(object):
                     dest_dir = os.path.dirname(midvol)
                     warp_dir = dest_dir + f'/fm_unwarp{bold_no}'
                     EF_UD = os.path.join(warp_dir, 'EF_UD_warp.nii.gz')
-                    outfiles.append(EF_UD)
+
+                    if nofm == 0:
+                        outfiles.append(EF_UD)
+
                     if self._outfiles_skip(overwrite, outfiles):
                         continue
+
                     # if reorient_skip_mc.mat dir exists, delete, so we don't keep 
                     # creating endless reorient_skip_mc.mat+++++++ directories
                     if os.path.isdir(mc_out_matdir):   
@@ -884,7 +925,10 @@ class jobConstructor(object):
                     if not os.path.exists(outputdir):
                         os.makedirs(outputdir)
 
-                    fsl_unwarp_direction = self._unwarp_direction_from_sidecar(outputdir,sessionid,bold_no)
+                    if nofm == 0:
+                        fsl_unwarp_direction = 'foo' ##placeholder
+                    else:
+                        fsl_unwarp_direction = self._unwarp_direction_from_sidecar(outputdir, sessionid, bold_no)
 
                     self._set_rmfiles('combine_warps_post_MNI',mc_mats)
                     rmfiles = self._get_rmfiles(stepname)
@@ -913,13 +957,13 @@ class jobConstructor(object):
                         fsl_unwarp_direction,
                         '1',
                         FD_THRESH,
-                        FD_LABEL] #1 for multi-echo
+                        FD_LABEL,
+                        nofm_str] #'1' for multi-echo
            
                     logfile_base = self._io_file_fmt(cmd)
                     if not self.args.no_remove_files:
                         cmd.append(" ".join(rmfiles))
                     job_spec_list.append(JobSpec(cmd,logfile_base,outfiles,rmfiles))
-
 
 
         self.scans.reset_default_sessionid()
@@ -1181,6 +1225,7 @@ class jobConstructor(object):
                         self.conf.template.TEMPLATE_DIR,
                         anat_space,
                         self.conf.out_atlas.MNI_RESAMP,
+                        self.conf.fmap.PREPTOOL,
                         self.conf.iproc.SCRATCHDIR
                     ]
     
@@ -1250,6 +1295,7 @@ class jobConstructor(object):
                             self.conf.template.TEMPLATE_DIR,
                             anat_space,
                             self.conf.out_atlas.MNI_RESAMP,
+                            self.conf.fmap.PREPTOOL,
                             self.conf.iproc.SCRATCHDIR,
                             str(thisecho)
                         ]
@@ -1734,6 +1780,49 @@ class jobConstructor(object):
                     logfile_base = self._io_file_fmt(cmd)
                     job_spec_list.append(JobSpec(cmd,logfile_base,outfiles))
 
+
+                else:
+                    nat_resamp_dir = os.path.join(self.conf.iproc.NAT_RESAMP_DIR, sessionid, task_dirname)
+                    nuis_out = os.path.join(nat_resamp_dir,f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat_nuis.dat')
+                    outputdir = None
+                    if anat_space in ('MNI222','MNI111'): 
+                        outputdir = os.path.join(self.conf.iproc.MNI_RESAMP_DIR, sessionid, task_dirname)
+                        #/n/nrg_l3/Users/jsegawa/iProc_MEPILOT/test_nofm_ME/mri_data/2UW27/MNI222/240701_2UW27/NBACKMECOR_008/tedana/240701_2UW27_bld008_desc-denoised_bold.nii.gz
+                        inputdir  = os.path.join(outputdir, 'tedana')
+                        resid_in = os.path.join(inputdir,f'{sessionid}_bld{bold_no}_desc-denoised_bold.nii.gz')
+                        resid_out = f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat_mni_resid'
+                        fullpath_resid_out = os.path.join(outputdir,resid_out)
+                        mask = os.path.join(self.conf.template.TEMPLATE_DIR,"anat_mni_underlay_brain_mask.nii.gz")
+                        resid_outs = [f'{fullpath_resid_out}+tlrc.HEAD', f'{fullpath_resid_out}+tlrc.BRIK']
+                    elif anat_space in ('NAT222','NAT111'): 
+                        outputdir = nat_resamp_dir
+                        inputdir  = os.path.join(outputdir, 'tedana')
+                        resid_in = os.path.join(inputdir,f'{sessionid}_bld{bold_no}_desc-denoised_bold.nii.gz')
+                        resid_out = f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat_resid'
+                        fullpath_resid_out = os.path.join(outputdir,resid_out)
+                        mask = os.path.join(self.conf.template.TEMPLATE_DIR,'mpr_reorient_brain_mask.nii.gz')
+                        resid_outs = [f'{fullpath_resid_out}+orig.HEAD', f'{fullpath_resid_out}+orig.BRIK']
+
+                    else:
+                        raise NotImplementedError('anat_space parameter to nuisance_regress() must be T1 or MNI')
+                    if not os.path.exists(outputdir):
+                        os.makedirs(outputdir) 
+                    outfiles = resid_outs + [nuis_out]
+                    if self._outfiles_skip(overwrite,outfiles):
+                        continue
+        
+                    cmd=[os.path.join(self.conf.iproc.CODEDIR,'runscript','nuisance_regress.sbatch'),
+                        resid_in,
+                        nuis_out,
+                        resid_out,
+                        outputdir,
+                        mask,
+                        self.conf.iproc.CODEDIR,
+                        self.conf.iproc.SCRATCHDIR]
+        
+                    logfile_base = self._io_file_fmt(cmd)
+                    job_spec_list.append(JobSpec(cmd,logfile_base,outfiles))
+
         self.scans.reset_default_sessionid()
         return job_spec_list 
 
@@ -1742,8 +1831,6 @@ class jobConstructor(object):
         #regression, and bandpassing, all in one step.
         # this is becasue we're only regressing out the whole-brain signal,
         #which is much simpler.
-
-        #### -------- ONLY RUNNNG FOR SINGLE ECHO! ------- ####
 
         logger.debug('wholebrain_only_regress') 
     
@@ -1776,6 +1863,58 @@ class jobConstructor(object):
                     elif anat_space in ('NAT222','NAT111'): 
                         outputdir = nat_resamp_dir
                         resid_in = os.path.join(outputdir,f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat.nii.gz')
+                        wb_ts = os.path.join(outputdir,f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_mni_wb_ts.dat')
+                        wbmc_ts = os.path.join(outputdir,f'{sessionid}_bld{bold_no}_reorient_skip_wb_ts_mcoutlier.dat')
+                        wb_mask = os.path.join(self.conf.template.TEMPLATE_DIR,'mni_masks','wb_mask_mpr_reorient.nii.gz')
+                        resid_out = f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat_wbonly'
+                        mask = os.path.join(self.conf.template.TEMPLATE_DIR,'mpr_reorient_brain_mask.nii.gz')
+                    else:
+                        raise NotImplementedError('anat_space parameter to nuisance_regress() must be T1 or MNI')
+     
+                    fullpath_resid_out = os.path.join(outputdir,resid_out+'.nii.gz')
+                    
+                    outfiles = [fullpath_resid_out]
+                    if self._outfiles_skip(overwrite,outfiles):
+                        continue
+
+                    cmd=[os.path.join(self.conf.iproc.CODEDIR,'runscript','wholebrain_only_regress.sh'),
+                        resid_in,
+                        wb_ts,
+                        wb_mask,
+                        resid_out,
+                        outputdir,
+                        mask,
+                        self.conf.iproc.CODEDIR,
+                        self.conf.iproc.SCRATCHDIR,
+                        mcout_ts,
+                        wbmc_ts]
+                       
+                        
+                    logfile_base = self._io_file_fmt(cmd)
+                    job_spec_list.append(JobSpec(cmd,logfile_base,outfiles))
+
+            else: ## multi-echo
+
+                    natdir = os.path.join(self.conf.iproc.NATDIR, sessionid, task_dirname)
+                    nat_resamp_dir = os.path.join(self.conf.iproc.NAT_RESAMP_DIR, sessionid, task_dirname)
+                    #mcout_ts = os.path.join(natdir,f'{sessionid}_bld{bold_no}_reorient_skip_FD*_outlier_matrix.dat')
+                    mcout_ts = os.path.join(natdir,f'{sessionid}_bld{bold_no}_reorient_skip_e1_FD{FD_LABEL}_outlier_matrix.dat')
+
+                    if anat_space in ('MNI222','MNI111'): 
+                        outputdir = os.path.join(self.conf.iproc.MNI_RESAMP_DIR, sessionid, task_dirname)
+                        #resid_in = os.path.join(outputdir,f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat_mni.nii.gz')
+                        inputdir  = os.path.join(outputdir, 'tedana')
+                        resid_in = os.path.join(inputdir,f'{sessionid}_bld{bold_no}_desc-denoised_bold.nii.gz')
+                        wb_ts = os.path.join(outputdir,f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat_wb_ts.dat')
+                        wbmc_ts = os.path.join(outputdir,f'{sessionid}_bld{bold_no}_reorient_skip_wb_ts_mcoutlier.dat')
+                        wb_mask = os.path.join(self.conf.template.TEMPLATE_DIR,'mni_masks','wm_mask_1mm.nii.gz')
+                        resid_out = f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat_mni_wbonly'
+                        mask = os.path.join(self.conf.template.TEMPLATE_DIR,'anat_mni_underlay_brain_mask.nii.gz')
+                    elif anat_space in ('NAT222','NAT111'): 
+                        outputdir = nat_resamp_dir
+                        #resid_in = os.path.join(outputdir,f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat.nii.gz')
+                        inputdir  = os.path.join(outputdir, 'tedana')
+                        resid_in = os.path.join(inputdir,f'{sessionid}_bld{bold_no}_desc-denoised_bold.nii.gz')
                         wb_ts = os.path.join(outputdir,f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_mni_wb_ts.dat')
                         wbmc_ts = os.path.join(outputdir,f'{sessionid}_bld{bold_no}_reorient_skip_wb_ts_mcoutlier.dat')
                         wb_mask = os.path.join(self.conf.template.TEMPLATE_DIR,'mni_masks','wb_mask_mpr_reorient.nii.gz')
