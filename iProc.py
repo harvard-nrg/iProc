@@ -802,6 +802,9 @@ def execute(executor_type, job_spec_list,steps, **kwargs):
     try:
         # could refactor all this to have child classes of executor object with internal type-specific logic, called here
         if executor_type == 'local':
+            if not job_spec_list:
+                logger.debug('empty job_spec_list')
+                return []
             for job in job_spec_list:
                 # check for empty command
                 if job.skip:

@@ -835,7 +835,7 @@ class jobConstructor(object):
                     if not os.path.exists(outputdir):
                         os.makedirs(outputdir)
 
-                    if nofm == 0:
+                    if nofm == 1:
                         fsl_unwarp_direction = 'foo' ##placeholder
                     else:
                         fsl_unwarp_direction = self._unwarp_direction_from_sidecar(outputdir, sessionid, bold_no)

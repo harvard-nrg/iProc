@@ -270,10 +270,8 @@ else:
         apply_warpcall = apply_warpcall_anat
 
 # get number of cores from slurm
-e = executors.get()
-logger.info(e)
-cpus = e.runtime.cpus_per_node() #int(os.environ["SLURM_CPUS_PER_TASK"])
-logger.info(cpus)
+cpus = len(os.sched_getaffinity(0))
+logger.info(f'there are {cpus} processors available to this task')
 
 ##merge the linear and nonlinear warps
 ## for ~400 individual files
