@@ -107,7 +107,7 @@ class jobConstructor(object):
                 task = self.scans.task_dict[task_name]
                 bids_task_name,_ = split_task(task_name)
                 numechos = task['NUMECHOS']
-
+                logger.debug(f'number of echos for {task_name} is {numechos}')
                 run = bold_scan['BIDS_ID']
                 if not run:
                     logger.debug(f'task column {task_name} is set to zero in {self.conf.csv.SCANLIST}')
@@ -116,7 +116,7 @@ class jobConstructor(object):
                 logger.info(f'processing sub={sub}, ses={ses}, task={task_name}, run={run}')
 
                 if int(numechos) == 1:
-
+                    logger.info('*** SINGLE-ECHO steps.func_from_bids')
                     basename = f'ses-{sanitize(ses)}/func/sub-{sanitize(sub)}_ses-{sanitize(ses)}_task-{bids_task_name}_run-{run}_bold.nii.gz'
                     bids_func_file = os.path.join(self.args.bids, basename)
                     run_zpad = f'{int(bold_scan["BLD"]):03d}'
@@ -156,6 +156,7 @@ class jobConstructor(object):
 
                 ### ---- MULTI_ECHO!!!!, JS 2025.03.19 ---- ###
                 else:
+                    logger.info('*** MULTI-ECHO steps.func_from_bids')
                     for iEcho in range(1,int(numechos) + 1):
                         basename = f'ses-{sanitize(ses)}/func/sub-{sanitize(sub)}_ses-{sanitize(ses)}_task-{bids_task_name}_run-{run}_echo-{iEcho}_bold.nii.gz'
                         bids_func_file = os.path.join(self.args.bids, basename)
@@ -578,7 +579,7 @@ class jobConstructor(object):
         if self._outfiles_skip(overwrite, outfiles):
             return []
 
-        self._set_rmfiles('fm_unwarp_and_mc_to_midvol', outfile_fname) 
+        self._get_rmfiles('fm_unwarp_and_mc_to_midvol').append(outfile_fname)
 
         bold_no = int(self.conf.template.MIDVOL_BOLDNO)
         bold_no_pad = f'{bold_no:03d}'
@@ -667,7 +668,7 @@ class jobConstructor(object):
             fsl_unwarp_direction = self._unwarp_direction_from_sidecar(self.conf.template.TEMPLATE_DIR,midvol_sessid,self.conf.template.MIDVOL_BOLDNO)
 
             rmfiles = self._get_rmfiles(stepname)
-            self._set_rmfiles('fm_unwarp_and_mc_to_midvol',unwarped_img) 
+            self._get_rmfiles('fm_unwarp_and_mc_to_midvol').append(unwarped_img)
 
             # --- IS IT MULTIECHO?? ---
             dwellPath = os.path.join(self.conf.template.TEMPLATE_DIR,f'{midvol_sessid}_bld{self.conf.template.MIDVOL_BOLDNO}_dwellTime_e1.sec')
@@ -788,11 +789,11 @@ class jobConstructor(object):
                 outputdir = os.path.join(self.conf.iproc.NATDIR,sessionid,task_dirname)
 
                 numechos=self.scans.task_dict[task_type]['NUMECHOS']
-                print('***** ECHOS: ' + numechos)
+                logger.debug(f'number of echos for {task_type} is {numechos}')
 
 # ----- IF SINGLE ECHO, BUSINESS AS USUAL ----- 
                 if int(numechos) == 1:
-
+                    logger.info(f'*** SINGLE-ECHO {stepname}')
                     mc_in = os.path.join(outputdir,f'{sessionid}_bld{bold_no}_reorient_skip.nii.gz')
                     mc_out = os.path.join(outputdir,f'{sessionid}_bld{bold_no}_reorient_skip_mc')
                     subjid = self.conf.iproc.SUB
@@ -878,7 +879,8 @@ class jobConstructor(object):
 # ----- IF ME, FIRST GET AFFINE REG FOR 1st ECHO ----- 
                 
                 else:
-                    print(" ----- THIS IS A MULTI-ECHO BOLD VOLUME -----")
+                    logger.info(f'*** MULTI-ECHO {stepname}')
+                    logger.info(" ----- THIS IS A MULTI-ECHO BOLD VOLUME -----")
                     mc_in = os.path.join(outputdir,f'{sessionid}_bld{bold_no}_reorient_skip_e1.nii.gz')
                     mc_out = os.path.join(outputdir,f'{sessionid}_bld{bold_no}_reorient_skip_mc_e1')
                     subjid = self.conf.iproc.SUB
@@ -1188,7 +1190,7 @@ class jobConstructor(object):
                 
                 numvol=self.scans.task_dict[task_type]['NUMVOL']
                 numechos=self.scans.task_dict[task_type]['NUMECHOS']
-                
+                logger.debug(f'number of echos for {task_type} is {numechos}')
                 if anat_space=='T1':
                     outfile_base = f'{anat_space}_TARG_FILE'
                 elif anat_space=='MNI': 
@@ -1197,7 +1199,7 @@ class jobConstructor(object):
                     raise NotImplementedError('anat_space parameter to combine_warps_parallel() must be T1 or MNI')
 
                 if int(numechos) == 1:
-                    print('***** SINGLE-ECHO steps.combine_warps_parallel*****')
+                    logger.info('***** SINGLE-ECHO steps.combine_warps_parallel*****')
                     pyscript = os.path.join(self.conf.iproc.CODEDIR,'iProc_p4_sbatch_combined.py')
                     task_dirname  = f'{task_type}_{bold_no}'
                     outputdir = os.path.join(self.conf.iproc.NATDIR, sessionid, task_dirname)
@@ -1264,7 +1266,7 @@ class jobConstructor(object):
                     job_spec_list.append(job_spec)
 
                 else: 
-                    print('***** MULTI-ECHO steps.combine_warps_parallel*****')
+                    logger.info('***** MULTI-ECHO steps.combine_warps_parallel*****')
                     pyscript = os.path.join(self.conf.iproc.CODEDIR,'iProc_p4_sbatch_combined_ME.py')
                     
                     volnums = [str(n) for n in range(int(numvol))]
@@ -1363,9 +1365,9 @@ class jobConstructor(object):
                 task_dirname  = f'{task_type}_{bold_no}'
                 numvol=self.scans.task_dict[task_type]['NUMVOL']
                 numechos=self.scans.task_dict[task_type]['NUMECHOS']
-
+                logger.debug(f'number of echos for {task_type} is {numechos}')
                 if int(numechos) == 1:
-                    print('***** SINGLE-ECHO steps.combine_warps_post*****')
+                    logger.info('***** SINGLE-ECHO steps.combine_warps_post*****')
 
                     outputdir = os.path.join(self.conf.iproc.NAT_RESAMP_DIR, sessionid, task_dirname)
                     if not os.path.exists(outputdir):
@@ -1420,7 +1422,7 @@ class jobConstructor(object):
                     job_spec_list.append(job_spec)
 
                 else:
-                    print('***** MULTI-ECHO steps.combine_warps_post*****')
+                    logger.info('***** MULTI-ECHO steps.combine_warps_post*****')
 
                     for thisecho in range(1,int(numechos) + 1):
                         outputdir = os.path.join(self.conf.iproc.NAT_RESAMP_DIR, sessionid, task_dirname)
@@ -1501,7 +1503,7 @@ class jobConstructor(object):
                 numechos=self.scans.task_dict[task_type]['NUMECHOS']
 
                 if int(numechos) == 1:
-                    print('***** SINGLE-ECHO steps.combine_warps_post*****')
+                    logger.info('***** SINGLE-ECHO steps.combine_warps_post*****')
 
                     outputdir = os.path.join(self.conf.iproc.MNI_RESAMP_DIR, sessionid, task_dirname)
                     if not os.path.exists(outputdir):
@@ -1554,7 +1556,7 @@ class jobConstructor(object):
 
 
                 else:
-                    print('***** MULTI-ECHO steps.combine_warps_post*****')
+                    logger.info('***** MULTI-ECHO steps.combine_warps_post*****')
 
                     for thisecho in range(1,int(numechos) + 1):
 
@@ -1630,7 +1632,7 @@ class jobConstructor(object):
                 numechos = self.scans.task_dict[task_type]['NUMECHOS']
 
                 if int(numechos) == 1:
-                    print('***** SINGLE-ECHO steps.calculate_nuisance_params*****')
+                    logger.info('***** SINGLE-ECHO steps.calculate_nuisance_params*****')
                     codedir = os.path.expanduser(self.conf.iproc.CODEDIR)
                     outputdir = os.path.join(self.conf.iproc.NAT_RESAMP_DIR,  sessionid, task_dirname)
                     natdir = os.path.join(self.conf.iproc.NATDIR,  sessionid, task_dirname)
@@ -1675,7 +1677,7 @@ class jobConstructor(object):
                     job_spec_list.append(JobSpec(cmd,logfile_base,outfiles))
 
                 else:
-                    print('***** MULTI-ECHO steps.calculate_nuisance_params*****')
+                    logger.info('***** MULTI-ECHO steps.calculate_nuisance_params*****')
                     codedir = os.path.expanduser(self.conf.iproc.CODEDIR)
                     outputdir = os.path.join(self.conf.iproc.NAT_RESAMP_DIR, sessionid, task_dirname)
                     natdir = os.path.join(self.conf.iproc.NATDIR,  sessionid, task_dirname)
@@ -1739,9 +1741,9 @@ class jobConstructor(object):
                 bold_no = f'{int(scan_no):03d}'
                 task_dirname  = f'{task_type}_{bold_no}'
                 numechos = self.scans.task_dict[task_type]['NUMECHOS']
-
+                logger.debug(f'number of echos for {task_type} is {numechos}')
                 if int(numechos) == 1:
-
+                    logger.info('**** SINGLE-ECHO steps.nuisance_regress')
                     nat_resamp_dir = os.path.join(self.conf.iproc.NAT_RESAMP_DIR, sessionid, task_dirname)
                     nuis_out = os.path.join(nat_resamp_dir,f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat_nuis.dat')
                     outputdir = None
@@ -1782,6 +1784,7 @@ class jobConstructor(object):
 
 
                 else:
+                    logger.info('*** MULTI-ECHO steps.nuisance_regress')
                     nat_resamp_dir = os.path.join(self.conf.iproc.NAT_RESAMP_DIR, sessionid, task_dirname)
                     nuis_out = os.path.join(nat_resamp_dir,f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat_nuis.dat')
                     outputdir = None
@@ -1844,9 +1847,9 @@ class jobConstructor(object):
                 bold_no = f'{int(scan_no):03d}'
                 task_dirname  = f'{task_type}_{bold_no}'
                 numechos = self.scans.task_dict[task_type]['NUMECHOS']
-
+                logger.debug(f'number of echos for {task_type} is {numechos}')
                 if int(numechos) == 1:
-
+                    logger.info('*** SINGLE-ECHO steps.wholebrain_only_regress')
                     natdir = os.path.join(self.conf.iproc.NATDIR, sessionid, task_dirname)
                     nat_resamp_dir = os.path.join(self.conf.iproc.NAT_RESAMP_DIR, sessionid, task_dirname)
                     #mcout_ts = os.path.join(natdir,f'{sessionid}_bld{bold_no}_reorient_skip_FD*_outlier_matrix.dat')
@@ -1893,8 +1896,8 @@ class jobConstructor(object):
                     logfile_base = self._io_file_fmt(cmd)
                     job_spec_list.append(JobSpec(cmd,logfile_base,outfiles))
 
-            else: ## multi-echo
-
+                else: ## multi-echo
+                    logger.info('*** MULTI-ECHO steps.wholebrain_only_regress')
                     natdir = os.path.join(self.conf.iproc.NATDIR, sessionid, task_dirname)
                     nat_resamp_dir = os.path.join(self.conf.iproc.NAT_RESAMP_DIR, sessionid, task_dirname)
                     #mcout_ts = os.path.join(natdir,f'{sessionid}_bld{bold_no}_reorient_skip_FD*_outlier_matrix.dat')
@@ -1960,10 +1963,10 @@ class jobConstructor(object):
                 bold_no = "%03d" % int(scan_no)
                 task_dirname  = f'{task_type}_{bold_no}'
                 numechos=self.scans.task_dict[task_type]['NUMECHOS']
-
+                logger.debug(f'number of echos for {task_type} is {numechos}')
                 if int(numechos) == 1:
 
-                    print('***** SINGLE-ECHO steps.bandpass*****')
+                    logger.info('***** SINGLE-ECHO steps.bandpass*****')
                     if anat_space in ('MNI222','MNI111'): 
                         outputdir = os.path.join(self.conf.iproc.MNI_RESAMP_DIR, sessionid, task_dirname)
                         resid_out = os.path.join(outputdir, f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat_mni_resid+tlrc')
@@ -2005,7 +2008,7 @@ class jobConstructor(object):
 
                 else:
 
-                    print('***** MULTI-ECHO steps.bandpass*****')
+                    logger.info('***** MULTI-ECHO steps.bandpass*****')
                     if anat_space in ('MNI222','MNI111'): 
                         outputdir = os.path.join(self.conf.iproc.MNI_RESAMP_DIR, sessionid, task_dirname)
                         resid_out = os.path.join(outputdir,'tedana',f'{sessionid}_bld{bold_no}_desc-denoised_bold.nii.gz')
@@ -2094,7 +2097,9 @@ class jobConstructor(object):
                 surfdir = os.path.join(outputdir)
 
                 numechos = self.scans.task_dict[task_type]['NUMECHOS']
+                logger.debug(f'number of echos for {task_type} is {numechos}')
                 if int(numechos) == 1:
+                    logger.info('*** SINGLE-ECHO steps.fs6_project_to_surface')
                     bold = f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat'
                     bold2 = bold + '_resid_bpss'
                     bold3 = bold + '_wbonly'
@@ -2116,6 +2121,7 @@ class jobConstructor(object):
                         smooth,
                         bold4]
                 else:
+                    logger.info('*** MULTI-ECHO steps.fs6_project_to_surface')
                     #bold = f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat'
                     bold_tedanaed = f'{sessionid}_bld{bold_no}_desc-denoised_bold'
                     bold_out = f'{sessionid}_bld{bold_no}_tedana'
