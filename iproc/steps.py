@@ -836,10 +836,10 @@ class jobConstructor(object):
                     if not os.path.exists(outputdir):
                         os.makedirs(outputdir)
 
-                    if nofm == 1:
-                        fsl_unwarp_direction = 'foo' ##placeholder
-                    else:
+                    if nofm == 0:
                         fsl_unwarp_direction = self._unwarp_direction_from_sidecar(outputdir, sessionid, bold_no)
+                    else:
+                        fsl_unwarp_direction = 'foo' ##placeholder
 
                     self._set_rmfiles('combine_warps_post_MNI', mc_mats)
                     rmfiles = self._get_rmfiles(stepname)
@@ -928,9 +928,9 @@ class jobConstructor(object):
                         os.makedirs(outputdir)
 
                     if nofm == 0:
-                        fsl_unwarp_direction = 'foo' ##placeholder
-                    else:
                         fsl_unwarp_direction = self._unwarp_direction_from_sidecar(outputdir, sessionid, bold_no)
+                    else:
+                        fsl_unwarp_direction = 'foo' ##placeholder
 
                     self._set_rmfiles('combine_warps_post_MNI',mc_mats)
                     rmfiles = self._get_rmfiles(stepname)
