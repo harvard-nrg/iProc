@@ -21,8 +21,9 @@ unwarp_direction=${17}
 ME=${18}
 FDThres=${19}
 FDTHRES=${20}
+NOFM=${21} # 0 for field mpas, 1 for no field maps
 #NUMECHOS=${19}
-rmfiles=${21:-''}
+rmfiles=${22:-''}
 
 MIDVOL_UNWARP=${MIDVOL}_unwarp
 
@@ -122,8 +123,16 @@ python ${CODEDIR}/runscript/create_motion_outlier_matrix.py $OUTLIER_FILE $NUMVO
 # motion estimation and correction (within-run alignment)
 mcflirt -in ${MC_IN} -out ${MC_OUT} -refvol ${MIDVOL_NO} -mats -plots -rmsrel -rmsabs -report  ## need this but after the specific middle volume has been selected & applying this to that.
 fslroi ${MC_OUT} ${MIDVOL} ${MIDVOL_NO} 1 
-# not going to pass on any warpfiles
-${CODEDIR}/modwrap.sh 'module load fsl/4.0.3-ncf' 'module load fsl/5.0.4-ncf' ${CODEDIR}/runscript/fm_unw.sh ${FM_SESSID} ${FMdir} ${MIDVOL} ${MIDVOL_UNWARP} ${FM_BOLDNO} ${DEST_DIR} ${WARP_DIR} ${unwarp_direction} ${ME}
+
+### ----- 2026.01.16 JS, if no field map, don't unwarp midvol, "unwarp" midvol is just midvol
+if [ ${NOFM} -eq 1 ]; then
+    echo "------- no field map, copying midvol to midvol unwarp -------"
+    cp ${MIDVOL}.nii.gz ${MIDVOL_UNWARP}.nii.gz
+else 
+    # not going to pass on any warpfiles
+    echo "------- field map available, running fm_unw for midvol -------"
+    ${CODEDIR}/modwrap.sh 'module load fsl/4.0.3-ncf' 'module load fsl/5.0.4-ncf' ${CODEDIR}/runscript/fm_unw.sh ${FM_SESSID} ${FMdir} ${MIDVOL} ${MIDVOL_UNWARP} ${FM_BOLDNO} ${DEST_DIR} ${WARP_DIR} ${unwarp_direction} ${ME}
+fi
 
 flirt -in ${MIDVOL_UNWARP} -ref ${TARGET} -out ${FLIRT_OUT} -omat ${FLIRT_MAT_OUT} -bins 256 -cost corratio -searchrx -180 180 -searchry -180 180 -searchrz -180 180 -dof 12 -interp trilinear 
 
@@ -156,7 +165,6 @@ flirt -in ${MIDVOL_UNWARP} -ref ${TARGET} -out ${FLIRT_OUT} -omat ${FLIRT_MAT_OU
 
 
 #EDITED to look for skip_mc_e1.par if ME is 1
-
 ${CODEDIR}/runscript/p2a.sh ${OUTDIR} ${SCAN_TYPE} ${NUMVOL} ${REGRESSORS_MC_DAT_OUT} ${ME}
 
 if [ -n "$rmfiles" ]; then

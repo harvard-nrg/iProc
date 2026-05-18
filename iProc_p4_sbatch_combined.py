@@ -35,16 +35,29 @@ def convert_warpcall_MNI(fi_name):
     spacename='MNI'
     res = re.findall("MAT_(\d+)", fi_name)
     print(res)
-    end_mat = os.path.join(args.scratch,"{}_TARG_WARP_{}".format(spacename, res[0]))
+    
     # combine fieldmap warp with midvolMCtarget-to-T1 transform and T1-to-MNI transform
-    template_cmd = "convertwarp --ref={TARGET} --warp2={COMB_MAT} --warp1={FMMAT} --premat={MOT_MAT} --out={END_MAT} --relout"
+    end_mat = os.path.join(args.scratch, f'{spacename}_TARG_WARP_{res[0]}')
+    cmd = f'convertwarp --ref={target} --warp2={comb_mat} --warp1={fmmat} --premat={fi_name} --out={end_mat} --relout'
+    print(cmd)
+    summary = execute(cmd, kill=True) #should take about 30s
 
-    cmd=template_cmd.format(
-        COMB_MAT=comb_mat,
-        MOT_MAT=fi_name,
-        TARGET=target,
-        END_MAT=end_mat,
-        FMMAT=fmmat)
+    if (summary.status == 0): 
+        pass
+    else:
+        raise Exception('failed command {}'.format(' '.join(cmd)))
+    stop=time.time()
+    return start,stop
+
+def convert_warpcall_MNI_noFM(fi_name):
+    start=time.time()
+    spacename='MNI'
+    res = re.findall("MAT_(\d+)", fi_name)
+    print(res)
+
+    # combine fieldmap warp with midvolMCtarget-to-T1 transform and T1-to-MNI transform
+    end_mat = os.path.join(args.scratch, f'{spacename}_TARG_WARP_{res[0]}')
+    cmd = f'convertwarp --ref={target} --warp1={comb_mat} --premat={fi_name} --out={end_mat} --relout'
     print(cmd)
     summary = execute(cmd, kill=True) #should take about 30s
 
@@ -59,16 +72,26 @@ def convert_warpcall_anat(fi_name):
     start=time.time()
     res = re.findall("MAT_(\d+)", fi_name)
     print(res)
-    comb_mat = os.path.join(args.scratch,"T1_TARG_WARP_%s" % res[0])
-    # combine fieldmap warp with midvolMCtarget-to-T1 transform
-    template_cmd = "convertwarp --ref={TARGET} --warp1={FMMAT} --premat={MOT_MAT} --postmat={POST_MAT} --out={COMB_MAT} --relout"
 
-    cmd=template_cmd.format(
-        COMB_MAT=comb_mat,
-        MOT_MAT=fi_name,
-        TARGET=target, #global
-        POST_MAT=omat,
-        FMMAT=fmmat) #global 
+    # combine fieldmap warp with midvolMCtarget-to-T1 transform
+    comb_mat = os.path.join(args.scratch, f'T1_TARG_WARP_{res[0]}')
+    cmd = f'convertwarp --ref={target} --warp1={fmmat} --premat={fi_name} --postmat={omat} --out={comb_mat} --relout'
+    print(cmd)
+    summary = execute(cmd, kill=True) #should take about 30s
+
+def convert_warpcall_anat_noFM(fi_name):
+    start=time.time()
+    res = re.findall("MAT_(\d+)", fi_name)
+    print(res)
+
+    # combine fieldmap warp with midvolMCtarget-to-T1 transform
+    comb_mat = os.path.join(args.scratch, f'T1_TARG_WARP_{res[0]}')
+    #cmd = f'convertwarp --ref={target} --warp1={fmmat} --premat={fi_name} --postmat={omat} --out={comb_mat} --relout'
+    
+    atob = fi_name
+    btoc = omat
+
+    cmd = f'convert_xfm -omat {comb_mat} -concat {btoc} {atob}'
     print(cmd)
     summary = execute(cmd, kill=True) #should take about 30s
 
@@ -76,40 +99,49 @@ def apply_warpcall_MNI(fi_name):
     start = time.time()
     res = re.findall("time_point_(\d+).nii.gz", fi_name)
     spacename='MNI'
-    end_mat = os.path.join(args.scratch,"{}_TARG_WARP_{}".format(spacename, res[0]))
-    fnirt_out = os.path.join(args.scratch,"{}_TARG_FILE_{}".format(spacename, res[0]))
 
-    template_cmd = "applywarp --ref={TARGET} --in={FNIRT_IN} --warp={END_MAT} --rel --out={FNIRT_OUT}"
-    cmd=template_cmd.format(
-        FNIRT_IN=fi_name,
-        END_MAT=end_mat,
-        FNIRT_OUT=fnirt_out,
-        TARGET=target)
+
+    end_mat = os.path.join(args.scratch, f'{spacename}_TARG_WARP_{res[0]}')
+    fnirt_out = os.path.join(args.scratch, f'{spacename}_TARG_FILE_{res[0]}')
+
+    cmd = f'applywarp --ref={target} --in={fi_name} --warp={end_mat} --rel --out={fnirt_out}'
     print(cmd)
     summary = execute(cmd, kill=True)
 
     if (summary.status == 0):
         pass
     else:
-        raise Exception('failed command {}'.format(' '.join(cmd)))
+        raise Exception(f"failed command {' '.join(cmd)}")
+
     stop=time.time()
     return start,stop
+
+
+def apply_warpcall_anat_noFM(fi_name):
+    start = time.time()
+    res = re.findall("time_point_(\d+).nii.gz", fi_name)
+
+    comb_mat = os.path.join(args.scratch, f'T1_TARG_WARP_{res[0]}')
+    flirt_out = os.path.join(args.scratch, f'T1_TARG_FILE_{res[0]}')
+
+    cmd = f'flirt -ref {target} -in {fi_name} -init {comb_mat} -out {flirt_out} -applyxfm'
+
+    print(cmd)
+    summary = execute(cmd, kill=True)
+
 
 def apply_warpcall_anat(fi_name):
     start = time.time()
     res = re.findall("time_point_(\d+).nii.gz", fi_name)
 
-    comb_mat = os.path.join(args.scratch,"T1_TARG_WARP_%s" % res[0])
-    fnirt_out = os.path.join(args.scratch,"T1_TARG_FILE_%s" % res[0])
+    comb_mat = os.path.join(args.scratch, f'T1_TARG_WARP_{res[0]}')
+    fnirt_out = os.path.join(args.scratch, f'T1_TARG_FILE_{res[0]}')
 
-    template_cmd = "applywarp --ref={TARGET} --in={FNIRT_IN} --warp={COMB_MAT} --rel --out={FNIRT_OUT}"
-    cmd=template_cmd.format(
-        FNIRT_IN=fi_name,
-        COMB_MAT=comb_mat,
-        FNIRT_OUT=fnirt_out,
-        TARGET=target)
+    cmd = f'applywarp --ref={target} --in={fi_name} --warp={comb_mat} --rel --out={fnirt_out}'
+
     print(cmd)
     summary = execute(cmd, kill=True)
+
 
 def visualize_runtimes(results,fig):
     start,stop = np.array(results).T
@@ -146,6 +178,8 @@ parser.add_argument("-b", "--bold-no", required=True,
     help="Bold Number")
 parser.add_argument("-d", "--destination-space", required=True,choices=["MNI","T1"],
     help="which output space")
+parser.add_argument("-p", "--preptool", required=True, choices=["none","topup","fsl_prepare_fieldmap"],
+    help="which fieldmap preptool, looking for 'none'")
 parser.add_argument("--scratch", required=True,
     help="scratch directory to use for convert_mat output.")
 parser.add_argument("-a", "--mni-atlas",  
@@ -163,58 +197,79 @@ logger.info(machine())
 args.mat_dir = os.path.expanduser(args.mat_dir)
 args.output_dir = os.path.expanduser(args.output_dir)
 
-# Combine warps (mcTarget-meanBOLD + meanBOLD-T1)
-template_cmd = "convert_xfm -omat {OMAT} -concat {BtoC} {AtoB}"
+##### ----- STEP 1: Combine warps (mcTarget-meanBOLD + meanBOLD-T1) ----- #####
 
 # TODO: check output exists before executing
-omat = os.path.join(args.output_dir,"%s_to_anat.mat" % args.bold_no)
-atob = os.path.join(args.output_dir,"%s_to_allscans.mat" % args.bold_no)
-btoc = os.path.join(args.template_dir,"%s_allscans_meanBOLD_to_T1.mat" % args.subject_id)
 
-cmd=template_cmd.format(
-    OMAT=omat,
-    AtoB=atob,
-    BtoC=btoc)
+omat = os.path.join(args.output_dir, f'{args.bold_no}_to_anat.mat')
+atob = os.path.join(args.output_dir, f'{args.bold_no}_to_allscans.mat')
+btoc = os.path.join(args.template_dir, f'{args.subject_id}_allscans_meanBOLD_to_T1.mat')
+
+cmd = f'convert_xfm -omat {omat} -concat {btoc} {atob}'
 
 summary = execute(cmd, kill=True)
 print(cmd)
 time.sleep(2)
 
+#### ----- STEP 2: ----- ####
+
 # declare global variables so we can easily access in parallel-run function
 target = None
-unwarp_dir = 'fm_unwarp{}'.format(args.bold_no)
+unwarp_dir = f'fm_unwarp{args.bold_no}'
 fmmat = os.path.join(args.output_dir, unwarp_dir,"EF_UD_warp.nii.gz")
 #run one or the other function by renaming in if block
 convert_warpcall = None
 apply_warpcall = None
-if args.destination_space == "MNI":
-    #MNI specific -- combine MNI and ANAT warps
-    template_cmd = "convertwarp --ref={TARGET} --warp1={STD_MAT} --premat={OMAT} --out={COMB_MAT} --relout"
 
-    # set global variables to be used by parallel steps    
-    omat = os.path.join(args.output_dir,"%s_to_anat.mat" % args.bold_no)
-    comb_mat = os.path.join(args.output_dir, "%s_to_MNI.mat" % args.bold_no)
-    target = os.path.join(args.mni_atlas)
-    std_mat = os.path.join(args.template_dir,"mpr_to_mni_FNIRT.mat.nii.gz")
-    
-    cmd=template_cmd.format(
-        COMB_MAT=comb_mat,
-        TARGET=target,
-        OMAT=omat,
-        STD_MAT=std_mat)
-    print(cmd)
-    summary = execute(cmd, kill=True) 
-    time.sleep(2)
+##############  NO FIELD MAPS ##############
+if args.preptool == "none":
+    if args.destination_space == "MNI":
+        #MNI specific -- combine MNI and ANAT warps
 
-    target = os.path.join(args.mni_atlas)
-    convert_warpcall = convert_warpcall_MNI
-    apply_warpcall = apply_warpcall_MNI
-else: #assume anat
-    target = os.path.join(args.template_dir,"mpr.nii.gz")
-    convert_warpcall = convert_warpcall_anat
-    apply_warpcall = apply_warpcall_anat
+        omat = os.path.join(args.output_dir, f'{args.bold_no}_to_anat.mat')
+        comb_mat = os.path.join(args.output_dir, f'{args.bold_no}_to_MNI.mat')
+        target = os.path.join(args.mni_atlas)
+        std_mat = os.path.join(args.template_dir, 'mpr_to_mni_FNIRT.mat.nii.gz')
 
-# get number of cores
+        cmd = f'convertwarp --ref={target} --warp1={std_mat} --premat={omat} --out={comb_mat} --relout'
+        print(cmd)
+        summary = execute(cmd, kill=True) 
+        time.sleep(2)
+
+        target = os.path.join(args.mni_atlas)
+        convert_warpcall = convert_warpcall_MNI_noFM
+        apply_warpcall = apply_warpcall_MNI
+    else: #assume anat
+        target = os.path.join(args.template_dir,"mpr.nii.gz")
+        convert_warpcall = convert_warpcall_anat_noFM
+        apply_warpcall = apply_warpcall_anat_noFM   ##2026.01.28 JS: needs to be different because linear?
+
+
+##############  BACK TO YOUR REGULARLY SCHEDULED PROGRAMMING: FIELD MAPS ##############
+else:
+    if args.destination_space == "MNI":
+        #MNI specific -- combine MNI and ANAT warps
+        
+        # set global variables to be used by parallel steps    
+        omat = os.path.join(args.output_dir, f'{args.bold_no}_to_anat.mat')
+        comb_mat = os.path.join(args.output_dir, f'{args.bold_no}_to_MNI.mat')
+        target = os.path.join(args.mni_atlas)
+        std_mat = os.path.join(args.template_dir, 'mpr_to_mni_FNIRT.mat.nii.gz')
+
+        cmd = f'convertwarp --ref={target} --warp1={std_mat} --premat={omat} --out={comb_mat} --relout'
+        print(cmd)
+        summary = execute(cmd, kill=True) 
+        time.sleep(2)
+
+        target = os.path.join(args.mni_atlas)
+        convert_warpcall = convert_warpcall_MNI
+        apply_warpcall = apply_warpcall_MNI
+    else: #assume anat
+        target = os.path.join(args.template_dir,"mpr.nii.gz")
+        convert_warpcall = convert_warpcall_anat
+        apply_warpcall = apply_warpcall_anat
+
+# get number of cores from slurm
 cpus = len(os.sched_getaffinity(0))
 logger.info(f'there are {cpus} processors available to this task')
 
@@ -227,7 +282,7 @@ matfiles_exist = {f:os.path.exists(f) for f in matfiles}
 if not all(matfiles_exist.values()):
     matfiles_missing = [k for k,v in list(matfiles_exist.items()) if not v]
     matfiles_join = ' '.join(matfiles_missing)
-    raise Exception('Some matfiles do not exist: {}'.format(matfiles_join))
+    raise Exception(f'Some matfiles do not exist: {matfiles_join}')
 # writes to scratch to save on i/o
 multiprocessing(cpus, convert_warpcall, matfiles)
 
@@ -238,3 +293,4 @@ multiprocessing(cpus, apply_warpcall, tmpfiles)
 
 print((socket.getfqdn()))
 print("Done!")
+
