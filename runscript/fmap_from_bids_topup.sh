@@ -43,7 +43,6 @@ elif [[ $OUTDIR == *_PA ]]
     echo "0 1 0 $TotalReadoutTime" >> $datain
     echo "0 -1 0 $TotalReadoutTime" >> $datain
 fi
-echo $OUTDIR does not contain AP or PA
 
 #echo "0 -1 0 $TotalReadoutTime" >> $datain
 #echo "0 1 0 $TotalReadoutTime" >> $datain

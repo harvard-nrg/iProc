@@ -714,6 +714,12 @@ def filter_and_project(steps, args):
     rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['calculate_nuisance_params'])
     ## can these be run all at the same time? I think so
 
+    # Adding despike function
+    job_spec_list = steps.despike(overwrite=args.overwrite)
+    rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['despike'])
+    job_spec_list = steps.despike_mni(overwrite=args.overwrite)
+    rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['despike'])
+
     #MNI
     res = conf.out_atlas.RESOLUTION
     job_spec_list = steps.nuisance_regress(f'MNI{res}', overwrite=args.overwrite)
@@ -730,6 +736,16 @@ def filter_and_project(steps, args):
     rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['bandpass_anat'])
     job_spec_list = steps.wholebrain_only_regress(f'NAT{res}', overwrite=args.overwrite)
     rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['wholebrain_only_regress_anat'])
+
+    #T1 add despike outputs
+    job_spec_list = steps.nuisance_regress_despike('NAT111', overwrite=args.overwrite)
+    rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['nuisance_regress_anat'])
+    job_spec_list = steps.bandpass_despike('NAT111', overwrite=args.overwrite)
+    rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['bandpass_anat'])
+    job_spec_list = steps.wholebrain_only_regress_despike('NAT111', overwrite=args.overwrite)
+    rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['wholebrain_only_regress_anat'])
+    job_spec_list = steps.fs6_project_to_surface_despike(overwrite=args.overwrite)
+    rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['fs6_project_to_surface']) #maybe 150GB
 
     # step 6
     job_spec_list = steps.fs6_project_to_surface(overwrite=args.overwrite)

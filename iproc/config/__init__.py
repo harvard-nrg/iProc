@@ -1,5 +1,7 @@
 import configparser
 
+from .schema import validate_config, ConfigValidationError
+
 class Config(object):
     def __init__(self):
         self._config = None
@@ -8,9 +10,20 @@ class Config(object):
     def parse(self, f):
         self._config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
         self._config.read(f)
+        self.validate()
         for section in self._config.sections():
             self.__dict__[section] = ConfigSection(self._config,section)
             self._sections.append(section)
+
+    def validate(self):
+        """Validate the parsed config against the schema.
+
+        Raises ConfigError with all validation failures if invalid.
+        """
+        try:
+            validate_config(self._config)
+        except ConfigValidationError as e:
+            raise ConfigError(str(e))
 
     def __contains__(self, name):
         try:
@@ -63,7 +76,7 @@ class ConfigSection(object):
 
     def set(self, name, value):
         self._config.set(self.section, name, value)
-    
+
     # These allow us to access the configparser items dynamically,
     #but as if they were predefined class members in the namespace
     def __getattr__(self, name):

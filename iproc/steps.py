@@ -26,6 +26,7 @@ import collections
 import iproc.commons as commons
 from iproc.bids import sanitize,split_task
 from pathlib import Path
+from bids import BIDSLayout
 
 #get logger from calling script
 logger = logging.getLogger(__name__)
@@ -59,12 +60,34 @@ class jobConstructor(object):
             for anat_dir,anat_scan in self.scans.anats():
                 run = anat_scan['BIDS_ID']
                 logger.info(f'processing sub={sub}, ses={ses}, anat={run}')
-                basename = f'ses-{sanitize(ses)}/anat/sub-{sanitize(sub)}_ses-{sanitize(ses)}_run-{run}_T1w.nii.gz'
-                bids_anat_file = os.path.join(self.args.bids, basename)
-                if not os.path.exists(bids_anat_file):
-                    raise IOError(f'{bids_anat_file} does not exist.')
-                #scan_no is set automatically by self.scans.anats()
-                run_zpad = f'{int(self.scans.scan_no):03d}'  # note that this is the ScanNumber, not the BIDS run number
+                match = re.match('ANAT_(.*?)_.*', anat_scan['TYPE'])
+                acq = match.group(1) if match else None
+                # use pybids to find the T1w file we're looking for
+                params = {
+                    'subject': sanitize(sub),
+                    'session': sanitize(ses),
+                    'acquisition': acq,
+                    'run': int(run),
+                    'suffix': 'T1w',
+                    'extension': '.nii.gz'
+                }
+                logger.info(f'searching for any BIDS files that match query {params}')
+                layout = BIDSLayout(self.args.bids, validate=False)
+                files = layout.get(return_type='file', **params)
+                matches = len(files)
+                if not matches:
+                    raise FileNotFoundError(
+                        f'could not locate any files under {self.args.bids} '
+                        f'that match query {params}'
+                    )
+                elif matches > 1:
+                    raise ValueError(
+                        f'found {matches} files under {self.args.bids} '
+                        f'that match query {params}'
+                    )
+                bids_anat_file = files.pop()
+                # this is the DICOM SeriesNumber, not the BIDS run number
+                run_zpad = f'{int(self.scans.scan_no):03d}'
                 anat_basename = f'{ses}_mpr{run_zpad}'
                 anat_dirname = os.path.join(self.conf.iproc.NATDIR, ses, f'{anat_dir}_{run_zpad}')
                 work_dirname = os.path.join(self.conf.iproc.WORKDIR, f'ANAT_{ses}')
@@ -73,10 +96,6 @@ class jobConstructor(object):
                 outfiles = [dest_reorient_nii]
                 if self._outfiles_skip(overwrite,outfiles):
                     continue
-                #elif not self.args.no_remove_files:
-                    #for outfile in outfiles:
-                        #os.remove(outfile) 
-                        #logging.debug(f'removed {outfile}')
 
                 for d in [anat_dirname, work_dirname]:
                     if not os.path.exists(d):
@@ -105,20 +124,51 @@ class jobConstructor(object):
             ses = sessionid
             for task_name,bold_scan in self.scans.tasks():
                 task = self.scans.task_dict[task_name]
-                bids_task_name,_ = split_task(task_name)
+                bids_task_name,direction,_ = split_task(task_name)
                 numechos = task['NUMECHOS']
                 logger.debug(f'number of echos for {task_name} is {numechos}')
                 run = bold_scan['BIDS_ID']
                 if not run:
-                    logger.debug(f'task column {task_name} is set to zero in {self.conf.csv.SCANLIST}')
+                    logger.debug(
+                        f'task column {task_name} is set to zero in '
+                        f' {self.conf.csv.SCANLIST}'
+                    )
                     continue
 
-                logger.info(f'processing sub={sub}, ses={ses}, task={task_name}, run={run}')
+                logger.info(
+                    f'processing sub={sub}, ses={ses}, task={task_name}, '
+                    f'run={run}'
+                )
 
                 if int(numechos) == 1:
                     logger.info('*** SINGLE-ECHO steps.func_from_bids')
-                    basename = f'ses-{sanitize(ses)}/func/sub-{sanitize(sub)}_ses-{sanitize(ses)}_task-{bids_task_name}_run-{run}_bold.nii.gz'
-                    bids_func_file = os.path.join(self.args.bids, basename)
+                    params = {
+                        'subject': sanitize(sub),
+                        'session': sanitize(ses),
+                        'task': [bids_task_name, bids_task_name.lower()],
+                        'run': int(run),
+                        'direction': [direction, direction.lower()],
+                        'suffix': 'bold',
+                        'extension': '.nii.gz'
+                    }
+                    logger.info(
+                        f'searching for any BIDS files that match '
+                        f'query {params}'
+                    )
+                    layout = BIDSLayout(self.args.bids, validate=False)
+                    files = layout.get(return_type='file', **params)
+                    matches = len(files)
+                    if not matches:
+                        raise FileNotFoundError(
+                            f'could not locate any files under '
+                            f'{self.args.bids} that match query {params}'
+                        )
+                    elif matches > 1:
+                        raise ValueError(
+                            f'found {matches} files under {self.args.bids} '
+                            f'that match query {params}'
+                        )
+                    bids_func_file = files.pop()
                     run_zpad = f'{int(bold_scan["BLD"]):03d}'
 
                     task_dirname = os.path.join(self.conf.iproc.NATDIR, ses, f'{task_name}_{run_zpad}')
@@ -213,12 +263,20 @@ class jobConstructor(object):
                 fmap1_run = fmap_scans['FIRST_FMAP']
                 fmap1_no_pad = f'{int(fmap1_run):03d}'
                 fmap_dirname = f'{fmap_dir}_{fmap1_no_pad}'
-                fmap_full_dirname = os.path.join(self.conf.iproc.NATDIR,sessionid,fmap_dirname)
-                dest_fieldmap_nii = f'{fmap_full_dirname}/{sessionid}_{fmap1_no_pad}_fieldmap' #removing .nii.gz affix to also make masked version for QC 2025.06.11 JS
+                fmap_full_dirname = os.path.join(
+                    self.conf.iproc.NATDIR,
+                    sessionid,fmap_dirname
+                )
+                dest_fieldmap_nii = (
+                    f'{fmap_full_dirname}/{sessionid}_'
+                    f'{fmap1_no_pad}_fieldmap'
+                )
 
-                ## added from LD for bids integration on 2025.03.05
                 outfiles = [f'{dest_fieldmap_nii}.nii.gz']
-                mask_copy_nii = f'{fmap_full_dirname}/{sessionid}_{fmap1_no_pad}_mag_img_brain_mask.nii.gz'
+                mask_copy_nii = (
+                    f'{fmap_full_dirname}/{sessionid}_{fmap1_no_pad}_'
+                    'mag_img_brain_mask.nii.gz'
+                )
 
                 if self._outfiles_skip(overwrite,outfiles):
                     continue
@@ -227,42 +285,81 @@ class jobConstructor(object):
                 if preptool == 'topup':
                     input1_bids_fname = fmap_scans['FIRST_BIDS_FNAME']
                     input2_bids_fname = fmap_scans['SECOND_BIDS_FNAME']
-                    #input1_json_fname = input1_bids_fname.rstrip('.nii.gz') + '.json' #rstrip will keep on stripping so NOPE
-                    #input2_json_fname = input2_bids_fname.rstrip('.nii.gz') + '.json'
-                    input1_json_fname = re.sub(r'.nii.gz','.json',input1_bids_fname)
-                    input2_json_fname = re.sub(r'.nii.gz','.json',input2_bids_fname)
+                    input1_json_fname = re.sub(
+                        r'.nii.gz',
+                        '.json',
+                        input1_bids_fname
+                    )
+                    input2_json_fname = re.sub(
+                        r'.nii.gz',
+                        '.json',
+                        input2_bids_fname
+                    )
 
                     # final output directory and filenames
-                    dest_fmap1_nii = os.path.join(fmap_full_dirname, 'fmap1_img.nii.gz')
-                    dest_fmap2_nii = os.path.join(fmap_full_dirname, 'fmap2_img.nii.gz')
+                    dest_fmap1_nii = os.path.join(
+                        fmap_full_dirname,
+                        'fmap1_img.nii.gz'
+                    )
+                    dest_fmap2_nii = os.path.join(
+                        fmap_full_dirname,
+                        'fmap2_img.nii.gz'
+                    )
 
-                    ## 2025.03.05: added from LD for bids integration 
-                    input1_series_number = commons.get_json_entity(input1_json_fname, 'SeriesNumber')
-                    input2_series_number = commons.get_json_entity(input2_json_fname, 'SeriesNumber')
-                    ## 
+                    input1_series_number = commons.get_json_entity(
+                        input1_json_fname,
+                        'SeriesNumber'
+                    )
+                    input2_series_number = commons.get_json_entity(
+                        input2_json_fname,
+                        'SeriesNumber'
+                    )
 
-                    totalReadoutTime1 = commons.get_json_entity(input1_json_fname,'TotalReadoutTime')
-                    totalReadoutTime2 = totalReadoutTime1 #commons.get_json_entity(input1_json_fname)
+                    totalReadoutTime1 = commons.get_json_entity(
+                        input1_json_fname,
+                        'TotalReadoutTime'
+                    )
+                    totalReadoutTime2 = totalReadoutTime1 
                     if totalReadoutTime1 != totalReadoutTime2:
-                        raise ValueError(f'{totalReadoutTime1} != {totalReadoutTime2}. TotalReadoutTime from {input1_json_fname} does not match {input2_json_fname}')
+                        raise ValueError(
+                            f'{totalReadoutTime1} != {totalReadoutTime2}. '
+                            f'TotalReadoutTime from {input1_json_fname} does '
+                            f'not match {input2_json_fname}'
+                        )
                     
-                    script = os.path.join(self.conf.iproc.CODEDIR, 'runscript', 'fmap_from_bids_topup.sh')
-                    cmd = [ script,
-                            input1_bids_fname,
-                            input2_bids_fname,
-                            fmap_full_dirname,
-                            self.conf.iproc.CODEDIR,
-                            str(totalReadoutTime2),
-                            dest_fieldmap_nii,
-                            self.conf.iproc.OUTDIR,
-                            mask_copy_nii ] # 2025.03.05: added OUTDIR, mask_copy_nii from LD for bids integration
+                    script = os.path.join(
+                        self.conf.iproc.CODEDIR,
+                        'runscript',
+                        'fmap_from_bids_topup.sh'
+                    )
+                    cmd = [
+                        script,
+                        input1_bids_fname,
+                        input2_bids_fname,
+                        fmap_full_dirname,
+                        self.conf.iproc.CODEDIR,
+                        str(totalReadoutTime2),
+                        dest_fieldmap_nii,
+                        self.conf.iproc.OUTDIR,
+                        mask_copy_nii
+                    ]
                 
                 elif preptool == 'fsl_prepare_fieldmap':
-                    print('----FSL PREPARE FIELDMAP----')
-                    script = os.path.join(self.conf.iproc.CODEDIR, 'runscript', 'fmap_from_bids.py')
-                    print(f'----{script}----')
-                    dest_fmapm_nii = os.path.join(fmap_full_dirname, 'mag_img.nii.gz')
-                    dest_fmapp_nii = os.path.join(fmap_full_dirname, 'pha_img.nii.gz')
+                    logger.info('----FSL PREPARE FIELDMAP----')
+                    script = os.path.join(
+                        self.conf.iproc.CODEDIR,
+                        'runscript',
+                        'fmap_from_bids.py'
+                    )
+                    logger.info(f'----{script}----')
+                    dest_fmapm_nii = os.path.join(
+                        fmap_full_dirname,
+                        'mag_img.nii.gz'
+                    )
+                    dest_fmapp_nii = os.path.join(
+                        fmap_full_dirname,
+                        'pha_img.nii.gz'
+                    )
                     bids_fmapp_file = fmap_scans['SECOND_BIDS_FNAME']
                     bids_fmapm_files = fmap_scans['FIRST_BIDS_FNAME']
                     cmd = [script]
@@ -277,16 +374,16 @@ class jobConstructor(object):
                         '--work-dir', os.path.join(self.conf.iproc.WORKDIR, f'FMAP_{ses}'),
                         '--output-maskcopy', mask_copy_nii
                     ])
-                    ## 2025.03.05: output-maskcopy added from Lauren for bids integration
                     logger.info(f'fmapp file is {bids_fmapp_file}')
                 elif preptool == 'none':
-                    print('----NOT USING FIELDMAP----')
+                    logger.info('----NOT USING FIELDMAP----')
+                    cmd = ['no-fieldmap']
                 else:
                     raise Exception(f'unknown preptool {preptool}')
+
                 # create output directory
                 if not os.path.exists(fmap_full_dirname):
                     os.makedirs(fmap_full_dirname)
-
                 logger.info(sp.list2cmdline(cmd))
                 logfile_base = self._io_file_fmt(cmd)
                 job_spec_list.append(JobSpec(cmd,logfile_base, outfiles))
@@ -798,7 +895,11 @@ class jobConstructor(object):
                 numechos=self.scans.task_dict[task_type]['NUMECHOS']
                 logger.debug(f'number of echos for {task_type} is {numechos}')
 
-# ----- IF SINGLE ECHO, BUSINESS AS USUAL ----- 
+                midvol_search_strategy = self.conf.get('template', 'MIDVOL_SEARCH_STRATEGY', default='forward')
+                midvol_search_nits = self.conf.get('template', 'MIDVOL_SEARCH_NITS', default='5')
+                midvol_use_dvars = self.conf.get('template', 'MIDVOL_USE_DVARS', default='no')
+
+                # ----- IF SINGLE ECHO, BUSINESS AS USUAL -----
                 if int(numechos) == 1:
                     logger.info(f'*** SINGLE-ECHO {stepname}')
                     mc_in = os.path.join(outputdir,f'{sessionid}_bld{bold_no}_reorient_skip.nii.gz')
@@ -855,7 +956,9 @@ class jobConstructor(object):
                     rmfiles += mc_rms
 
                     # note: p2.sh calls fm_unw.sh
-                    cmd=[os.path.join(self.conf.iproc.CODEDIR,'runscript','fm_unwarp_and_mc_to_midvol.sh'),
+                    runscript = os.path.join(self.conf.iproc.CODEDIR,'runscript','fm_unwarp_and_mc_to_midvol.sh')
+                    cmd = [
+                        runscript,
                         mc_in,
                         mc_out,
                         target,
@@ -876,15 +979,18 @@ class jobConstructor(object):
                         '0',
                         FD_THRESH,
                         FD_LABEL,
-                        nofm_str] #'0' for single-echo
+                        nofm_str,
+                        midvol_search_strategy,
+                        midvol_search_nits,
+                        midvol_use_dvars
+                    ]
            
                     logfile_base = self._io_file_fmt(cmd)
                     if not self.args.no_remove_files:
                         cmd.append(" ".join(rmfiles))
                     job_spec_list.append(JobSpec(cmd, logfile_base, outfiles, rmfiles))
 
-# ----- IF ME, FIRST GET AFFINE REG FOR 1st ECHO ----- 
-                
+                # ----- IF ME, FIRST GET AFFINE REG FOR 1st ECHO -----
                 else:
                     logger.info(f'*** MULTI-ECHO {stepname}')
                     logger.info(" ----- THIS IS A MULTI-ECHO BOLD VOLUME -----")
@@ -946,7 +1052,9 @@ class jobConstructor(object):
                     rmfiles += mc_rms
 
                     # note: p2.sh calls fm_unw.sh
-                    cmd=[os.path.join(self.conf.iproc.CODEDIR,'runscript','fm_unwarp_and_mc_to_midvol.sh'),
+                    runscript = os.path.join(self.conf.iproc.CODEDIR,'runscript','fm_unwarp_and_mc_to_midvol.sh')
+                    cmd = [
+                        runscript,
                         mc_in,
                         mc_out,
                         target,
@@ -967,7 +1075,11 @@ class jobConstructor(object):
                         '1',
                         FD_THRESH,
                         FD_LABEL,
-                        nofm_str] #'1' for multi-echo
+                        nofm_str,
+                        midvol_search_strategy,
+                        midvol_search_nits,
+                        midvol_use_dvars
+                    ]
            
                     logfile_base = self._io_file_fmt(cmd)
                     if not self.args.no_remove_files:
@@ -1082,22 +1194,28 @@ class jobConstructor(object):
         logger.debug('compute_T1_MNI_warp') 
         
         self.reset_steplog()
-        # I know this looks like some kind of error but that's its name
+
+        # registration strategy
+        reg_strategy = self.conf.get('template', 'REG_STRATEGY', default='fnirt')
+
         invwarp_out = f'{self.conf.template.TEMPLATE_DIR}/MNI_to_{self.conf.T1.T1_SESS}_mni_underlay.mat.nii.gz'
         outfiles = [invwarp_out]
         if self._outfiles_skip(overwrite,outfiles):
             return([])
         
+        runscript = os.path.join(self.conf.iproc.CODEDIR,'runscript','compute_T1_MNI_warp.sh')
+
         run_cmd=[
-            os.path.join(self.conf.iproc.CODEDIR,'runscript','compute_T1_MNI_warp.sh'),
+            runscript,
             self.conf.template.TEMPLATE_DIR,
             invwarp_out,
             self.conf.out_atlas.MNI_RESAMP,
             self.conf.out_atlas.MNI_RESAMP_BRAIN,
             self.conf.out_atlas.MNI_RESAMP_BRAINMASK,
-            self.conf.T1.T1_SESS
+            self.conf.T1.T1_SESS,
+            reg_strategy
         ]
-    
+
         self.scans.set_anat(self.conf.T1.T1_SESS,self.conf.T1.T1_SCAN_NO)
         logfile_base = self._io_file_fmt(run_cmd)
         job_spec_list = [JobSpec(run_cmd,logfile_base,outfiles)]
@@ -1108,13 +1226,18 @@ class jobConstructor(object):
         logger.debug('reg_MNI_CSF_WM_to_T1') 
         
         self.reset_steplog()
+
+        # REG_STRATEGY assigned
+        reg_strategy = self.conf.get('template', 'REG_STRATEGY', default='fnirt')
+
         csf_out = os.path.join(self.conf.template.TEMPLATE_DIR,'mni_masks/csf_mask_mpr_reorient.nii.gz')
         wm_out = os.path.join(self.conf.template.TEMPLATE_DIR,'mni_masks/wm_mask_mpr_reorient.nii.gz')
         outfiles = [csf_out,wm_out]
         if self._outfiles_skip(overwrite,outfiles):
             return([])
-        
-        run_cmd=[os.path.join(self.conf.iproc.CODEDIR,'runscript','reg_MNI_CSF_WM_to_T1.sh'),
+        runscript = os.path.join(self.conf.iproc.CODEDIR,'runscript','reg_MNI_CSF_WM_to_T1.sh')
+        run_cmd=[
+            runscript,
             self.conf.template.TEMPLATE_DIR,
             self.conf.T1.T1_SESS,
             csf_out,
@@ -2062,7 +2185,314 @@ class jobConstructor(object):
                     job_spec_list.append(JobSpec(cmd,logfile_base,outfiles,rmfiles))
         self.scans.reset_default_sessionid()
         return job_spec_list 
-    
+
+    def despike(self, overwrite=True):
+        '''
+        Despiking in NAT space
+        '''
+        logger.debug('despike')
+
+        job_spec_list = []
+        subjid=self.conf.iproc.SUB
+        for sessionid,sess in self.scans.sessions():
+            for task_type,bold_scan in self.scans.tasks():
+                scan_no = bold_scan['BLD']
+                bold_no = "%03d" % int(scan_no)
+                task_dirname  = f'{task_type}_{bold_no}'
+                outputdir = os.path.join(self.conf.iproc.NAT111DIR,  sessionid, task_dirname)
+                natdir = os.path.join(self.conf.iproc.NATDIR,  sessionid, task_dirname)
+                resid_in = os.path.join(outputdir,"%s_bld%s_reorient_skip_mc_unwarp_anat.nii.gz" % (sessionid,bold_no))
+                despike_out = os.path.join(outputdir, "%s_bld%s_reorient_skip_mc_unwarp_anat_despike.nii.gz" % (sessionid,bold_no))
+
+                outfiles = [despike_out]
+                if self._outfiles_skip(overwrite,outfiles):
+                    continue
+                despike_sh = os.path.join(
+                    self.conf.iproc.CODEDIR,
+                    'runscript',
+                    'despike.sh'
+                )
+                cmd = [
+                    despike_sh,
+                    resid_in,
+                    despike_out,
+                    outputdir,
+                    self.conf.iproc.CODEDIR,
+                    self.conf.iproc.SCRATCHDIR
+                ]
+
+                logfile_base = self._io_file_fmt(cmd)
+                job_spec_list.append(JobSpec(cmd,logfile_base,outfiles))
+        self.scans.reset_default_sessionid()
+        return job_spec_list
+
+    def despike_mni(self,overwrite=True):
+        '''
+        Despiking in MNI space
+        '''
+        logger.debug('despike_mni')
+                
+        job_spec_list = []
+        subjid=self.conf.iproc.SUB
+        for sessionid,sess in self.scans.sessions():
+            for task_type,bold_scan in self.scans.tasks():
+                scan_no = bold_scan['BLD']
+                bold_no = "%03d" % int(scan_no)
+                task_dirname  = f'{task_type}_{bold_no}'   
+                outputdir = os.path.join(self.conf.iproc.MNI111DIR,  sessionid, task_dirname)
+                natdir = os.path.join(self.conf.iproc.NATDIR,  sessionid, task_dirname)
+                mni_in = os.path.join(outputdir,"%s_bld%s_reorient_skip_mc_unwarp_anat_mni.nii.gz" % (sessionid,bold_no))
+                despike_out = os.path.join(outputdir, "%s_bld%s_reorient_skip_mc_unwarp_anat_mni_despike.nii.gz" % (sessionid,bold_no))
+                    
+                outfiles = [despike_out]
+                if self._outfiles_skip(overwrite,outfiles):
+                    continue   
+                despike_sh = os.path.join(
+                    self.conf.iproc.CODEDIR,
+                    'runscript',
+                    'despike_mni.sh'
+                )
+
+                cmd = [
+                    despike_sh,
+                    mni_in,
+                    despike_out,
+                    outputdir,
+                    self.conf.iproc.CODEDIR,
+                    self.conf.iproc.SCRATCHDIR
+                ]
+                    
+                logfile_base = self._io_file_fmt(cmd)
+                job_spec_list.append(JobSpec(cmd,logfile_base,outfiles))
+        self.scans.reset_default_sessionid()
+        return job_spec_list
+                
+    def nuisance_regress_despike(self,anat_space, overwrite=True):
+        '''
+        Apply nuisance regression to despiked output file
+        '''
+        logger.debug('nuisance_regress_despike')
+
+        self.reset_steplog()
+        job_spec_list = []  
+        subjid=self.conf.iproc.SUB
+        for sessionid,sess in self.scans.sessions():
+            for task_type,bold_scan in self.scans.tasks():
+                scan_no = bold_scan['BLD']
+                bold_no = "%03d" % int(scan_no)
+                task_dirname  = f'{task_type}_{bold_no}'
+                    
+                nat111dir = os.path.join(self.conf.iproc.NAT111DIR, sessionid, task_dirname)
+                nuis_out = os.path.join(nat111dir,"%s_bld%s_reorient_skip_mc_unwarp_anat_nuis.dat" % (sessionid,bold_no))
+                outputdir = None
+                #if anat_space == 'MNI111':
+                #    outputdir = os.path.join(self.conf.iproc.MNI111DIR, sessionid, task_dirname)
+                #    despike_in = os.path.join(outputdir,"%s_bld%s_reorient_skip_mc_unwarp_anat_mni.nii.gz" % (sessionid,bold_no))
+                #    despike_resid_out = "%s_bld%s_reorient_skip_mc_unwarp_anat_mni_resid" % (sessionid,bold_no)
+                #    fullpath_resid_out = os.path.join(outputdir,resid_out)
+                #    mask = os.path.join(self.conf.template.TEMPLATE_DIR,"anat_mni_underlay_brain_mask.nii.gz")
+                #    resid_outs = [f.format(fullpath_resid_out) for f in ['{}+tlrc.HEAD','{}+tlrc.BRIK']]
+                #elif anat_space == 'NAT111': 
+                if anat_space == 'NAT111':
+                    outputdir = nat111dir
+                    resid_in = os.path.join(outputdir,"%s_bld%s_reorient_skip_mc_unwarp_anat_despike.nii.gz" % (sessionid,bold_no))
+                    resid_out = "%s_bld%s_reorient_skip_mc_unwarp_anat_despike_resid" % (sessionid,bold_no)
+                    fullpath_resid_out = os.path.join(outputdir,resid_out)
+                    mask = os.path.join(self.conf.template.TEMPLATE_DIR,"mpr_reorient_brain_mask.nii.gz")
+                    resid_outs = [f.format(fullpath_resid_out) for f in ['{}+orig.HEAD','{}+orig.BRIK']]
+                else:
+                    raise NotImplementedError('anat_space parameter to nuisance_regress() must be T1 or MNI')
+
+                if not os.path.exists(outputdir):
+                    os.makedirs(outputdir)
+                outfiles = resid_outs + [nuis_out]
+                if self._outfiles_skip(overwrite,outfiles):
+                    continue
+                
+                cmd=[os.path.join(self.conf.iproc.CODEDIR,'runscript','nuisance_regress.sbatch'),
+                    resid_in,
+                    nuis_out,
+                    resid_out,
+                    outputdir,
+                    mask,
+                    self.conf.iproc.CODEDIR,
+                    self.conf.iproc.SCRATCHDIR]
+                    
+                logfile_base = self._io_file_fmt(cmd)
+                job_spec_list.append(JobSpec(cmd,logfile_base,outfiles))
+        self.scans.reset_default_sessionid()
+        return job_spec_list
+
+    def bandpass_despike(self,anat_space, overwrite=True):
+        '''
+        Apply bandpass filtering to despiked output file
+        '''
+        logger.debug('bandpass_despike')
+
+        job_spec_list = []
+        self.reset_steplog()
+        subjid=self.conf.iproc.SUB
+        for sessionid,sess in self.scans.sessions():
+            for task_type,bold_scan in self.scans.tasks():
+                scan_no = bold_scan['BLD']
+                bold_no = "%03d" % int(scan_no)
+                task_dirname  = f'{task_type}_{bold_no}'
+                #if anat_space == 'MNI111':
+                #    outputdir = os.path.join(self.conf.iproc.MNI111DIR, sessionid, task_dirname)
+                #    resid_out = os.path.join(outputdir,"%s_bld%s_reorient_skip_mc_unwarp_anat_mni_resid+tlrc" % (sessionid,bold_no))
+                #    bpss_out = "%s_bld%s_reorient_skip_mc_unwarp_anat_mni_resid_bpss" % (sessionid,bold_no)
+                #    mask = os.path.join(self.conf.template.TEMPLATE_DIR,"anat_mni_underlay_brain_mask.nii.gz")
+                #elif anat_space == 'NAT111':
+                if anat_space == 'NAT111':
+                    outputdir = os.path.join(self.conf.iproc.NAT111DIR, sessionid, task_dirname)
+                    resid_out = os.path.join(outputdir,"%s_bld%s_reorient_skip_mc_unwarp_anat_despike_resid+orig" % (sessionid,bold_no))
+                    bpss_out = "%s_bld%s_reorient_skip_mc_unwarp_anat_despike_resid_bpss" % (sessionid,bold_no)
+                    mask = os.path.join(self.conf.template.TEMPLATE_DIR,"mpr_reorient_brain_mask.nii.gz")
+                else:
+                    raise NotImplementedError('anat_space parameter to bandpass() must be T1 or MNI')
+                fullpath_bpss_out_nii = os.path.join(outputdir,'{}.nii.gz'.format(bpss_out))
+                logger.info(fullpath_bpss_out_nii)
+                outfiles = [fullpath_bpss_out_nii]
+                if self._outfiles_skip(overwrite,outfiles):
+                    continue
+                rmfiles = ['{}.{}'.format(resid_out,f) for f in ['BRIK','HEAD']]
+                # unlike most other scripts here, this one will fail instead of overwrite existing files
+                # right now this is handled in runscript/bandpass.sbatch, but
+                #this might be needed in future
+                #if os.path.exists(f):
+                #    os.remove(files)
+        
+                cmd=[os.path.join(self.conf.iproc.CODEDIR,'runscript','bandpass.sbatch'),
+                    resid_out,
+                    bpss_out,
+                    outputdir,
+                    mask,
+                    self.conf.iproc.CODEDIR,
+                    self.conf.iproc.SCRATCHDIR]
+                
+                logfile_base = self._io_file_fmt(cmd)
+                if not self.args.no_remove_files:
+                    cmd.append(" ".join(rmfiles))
+                job_spec_list.append(JobSpec(cmd,logfile_base,outfiles,rmfiles))
+        self.scans.reset_default_sessionid()
+        return job_spec_list
+
+    def wholebrain_only_regress_despike(self,anat_space, overwrite=True):
+         '''
+         This includes steps from nuisance variable calculation, regression,
+         and bandpass filtering in one step. This is because we're only 
+         regressing out the whole-brain signal, which is much simpler.
+         '''
+         logger.debug('wholebrain_only_regress')
+
+         job_spec_list = []
+         subjid=self.conf.iproc.SUB
+         for sessionid,sess in self.scans.sessions():
+             for task_type,bold_scan in self.scans.tasks():
+                 scan_no = bold_scan['BLD']
+                 bold_no = "%03d" % int(scan_no)
+                 task_dirname  = f'{task_type}_{bold_no}'
+                    
+                 nat111dir = os.path.join(self.conf.iproc.NAT111DIR, sessionid, task_dirname)
+                 #if anat_space == 'MNI111':
+                 #    outputdir = os.path.join(self.conf.iproc.MNI111DIR, sessionid, task_dirname)
+                 #    resid_in = os.path.join(outputdir,"%s_bld%s_reorient_skip_mc_unwarp_anat_mni.nii.gz" % (sessionid,bold_no))
+                 #    wb_ts = os.path.join(outputdir,"%s_bld%s_reorient_skip_mc_unwarp_anat_wb_ts.dat" % (sessionid,bold_no))
+                 #    wb_mask = os.path.join(self.conf.template.TEMPLATE_DIR,"mni_masks","wm_mask_1mm.nii.gz")
+                 #    resid_out = "%s_bld%s_reorient_skip_mc_unwarp_anat_mni_wb_resid" % (sessionid,bold_no)
+                 #    mask = os.path.join(self.conf.template.TEMPLATE_DIR,"anat_mni_underlay_brain_mask.nii.gz")
+                 if anat_space == 'NAT111':
+                     outputdir = nat111dir
+                     resid_in = os.path.join(outputdir,"%s_bld%s_reorient_skip_mc_unwarp_anat_despike.nii.gz" % (sessionid,bold_no))
+                     wb_ts = os.path.join(outputdir,"%s_bld%s_reorient_skip_mc_unwarp_mni_wb_ts.dat" % (sessionid,bold_no))
+                     wb_mask = os.path.join(self.conf.template.TEMPLATE_DIR,"mni_masks","wb_mask_mpr_reorient.nii.gz")
+                     resid_out = "%s_bld%s_reorient_skip_mc_unwarp_anat_despike_wb_resid" % (sessionid,bold_no)
+                     mask = os.path.join(self.conf.template.TEMPLATE_DIR,"mpr_reorient_brain_mask.nii.gz")
+                 else:
+                     raise NotImplementedError('anat_space parameter to nuisance_regress() must be T1 or MNI')
+        
+                 fullpath_resid_out = os.path.join(outputdir,resid_out+'.nii.gz')
+                 outfiles = [fullpath_resid_out]
+                 if self._outfiles_skip(overwrite,outfiles):
+                     continue
+
+                 cmd=[os.path.join(self.conf.iproc.CODEDIR,'runscript','wholebrain_only_regress.sh'),
+                     resid_in,
+                     wb_ts,
+                     wb_mask,
+                     resid_out,
+                     outputdir,
+                     mask,
+                     self.conf.iproc.CODEDIR,
+                     self.conf.iproc.SCRATCHDIR] 
+
+                 logfile_base = self._io_file_fmt(cmd)
+                 job_spec_list.append(JobSpec(cmd,logfile_base,outfiles))
+         self.scans.reset_default_sessionid()
+         return job_spec_list
+
+    def fs6_project_to_surface_despike(self, overwrite=True):
+        '''
+        Project despiked output file to FS6 surface
+        '''
+        logger.debug('fs6_project_to_surface_despike')
+        #TODO: output to different surfaces
+        #sesst is best t1
+
+        job_spec_list = []
+        self.reset_steplog()
+
+        sesst = self.conf.T1.T1_SESS
+        subjid=self.conf.iproc.SUB
+        for sessionid,sess in self.scans.sessions():
+            for task_type,bold_scan in self.scans.tasks():
+                scan_no = bold_scan['BLD']
+                task = self.scans.task_dict[task_type]
+                smooth = task['SMOOTHING']
+                bold_no = "%03d" % int(scan_no)
+                task_dirname  = f'{task_type}_{bold_no}'
+                outputdir = os.path.join(self.conf.iproc.FS6DIR, sessionid, task_dirname)
+                boldpath = os.path.join(self.conf.iproc.NAT111DIR, sessionid, task_dirname)
+                if not os.path.exists(outputdir):
+                    os.makedirs(outputdir)
+
+                surfdir = os.path.join(outputdir)
+                bold = '{SESS}_bld{BOLDNO}_reorient_skip_mc_unwarp_anat_despike'.format(SESS=sessionid,BOLDNO=bold_no)
+                bold2 = bold + '_resid_bpss' 
+                bold3 = bold + '_wb_resid'
+                # this is one of the files in the last batch. Not a
+                # comprehensive list of files
+                fname = '{HEM}.{BOLD2}_fsaverage6_sm{SMOOTH}.nii.gz'.format(
+                    HEM='lh',
+                    BOLD2=bold2,
+                    SESS=sessionid,
+                    SMOOTH=smooth
+                )
+                outfiles = [
+                    os.path.join(
+                        surfdir,
+                        fname
+                    )
+                ]
+        
+                if self._outfiles_skip(overwrite,outfiles):
+                    continue
+            
+                cmd=[os.path.join(self.conf.iproc.CODEDIR,'runscript','fs6_project_to_surf.sh'),
+                    bold,
+                    bold2,
+                    bold3,
+                    sesst,
+                    boldpath,
+                    surfdir,
+                    self.conf.iproc.SCRATCHDIR,  
+                    smooth]
+                 
+                logfile_base = self._io_file_fmt(cmd)
+                job_spec_list.append(JobSpec(cmd,logfile_base,outfiles))
+        self.scans.reset_default_sessionid() 
+        return job_spec_list
+            
     def fs6_project_to_surface(self, overwrite=True):
 
         print('------- RUNNING MULTI-ECHO STEPS/FS6_PROJECT_TO_SURF -------')

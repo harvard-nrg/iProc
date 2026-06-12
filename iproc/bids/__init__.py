@@ -100,7 +100,7 @@ def match_scan_no_to_bids(bids_base,scans,preptool):
             raise IOError
         for json in anat_jsons:
             # get series number for T1w anat from json, save in dict for later
-            anat_regex = f'.*sub-{sess.subjid}_ses-{bids_sessionid}_run-([0-9]+)_(T1w|T2w).json'
+            anat_regex = f'.*sub-{sess.subjid}_ses-{bids_sessionid}(?:_acq-\w+)?_run-([0-9]+)_(T1w|T2w).json'
             anat_match = re.match(anat_regex,json)
             run_no = anat_match.group(1)
             series_no = get_json_entity(anat_match.string,'SeriesNumber')
@@ -200,9 +200,9 @@ def sanitize(s):
     return regex.sub('', s)
 
 def split_task(s): 
-    regex = re.compile('([a-zA-Z]+)_?(\d+)?') 
+    regex = re.compile(r'([a-zA-Z0-9]+)_?([a-zA-Z0-9]+)?_?(\d+)?')
     match = regex.match(s) 
     if not match: 
         raise SplitTaskError(f'failed to split task "{s}"') 
-    task,run = match.groups('1')
-    return task,run
+    task,direction,run = match.groups()
+    return task,direction,run
