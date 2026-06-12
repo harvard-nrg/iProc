@@ -895,9 +895,21 @@ class jobConstructor(object):
                 numechos=self.scans.task_dict[task_type]['NUMECHOS']
                 logger.debug(f'number of echos for {task_type} is {numechos}')
 
-                midvol_search_strategy = self.conf.get('template', 'MIDVOL_SEARCH_STRATEGY', default='forward')
-                midvol_search_nits = self.conf.get('template', 'MIDVOL_SEARCH_NITS', default='5')
-                midvol_use_dvars = self.conf.get('template', 'MIDVOL_USE_DVARS', default='no')
+                midvol_search_strategy = self.conf.get(
+                    'template',
+                    'midvol_search_strategy',
+                    default='forward'
+                )
+                midvol_search_nits = self.conf.get(
+                    'template',
+                    'midvol_search_nits',
+                    default='5'
+                )
+                midvol_use_dvars = self.conf.get(
+                    'template',
+                    'midvol_use_dvars',
+                    default='no'
+                )
 
                 # ----- IF SINGLE ECHO, BUSINESS AS USUAL -----
                 if int(numechos) == 1:
@@ -1196,7 +1208,11 @@ class jobConstructor(object):
         self.reset_steplog()
 
         # registration strategy
-        reg_strategy = self.conf.get('template', 'REG_STRATEGY', default='fnirt')
+        reg_strategy = self.conf.get(
+            'template',
+            'reg_strategy',
+            default='fnirt'
+        )
 
         invwarp_out = f'{self.conf.template.TEMPLATE_DIR}/MNI_to_{self.conf.T1.T1_SESS}_mni_underlay.mat.nii.gz'
         outfiles = [invwarp_out]
@@ -1228,7 +1244,11 @@ class jobConstructor(object):
         self.reset_steplog()
 
         # REG_STRATEGY assigned
-        reg_strategy = self.conf.get('template', 'REG_STRATEGY', default='fnirt')
+        reg_strategy = self.conf.get(
+            'template',
+            'reg_strategy',
+            default='fnirt'
+        )
 
         csf_out = os.path.join(self.conf.template.TEMPLATE_DIR,'mni_masks/csf_mask_mpr_reorient.nii.gz')
         wm_out = os.path.join(self.conf.template.TEMPLATE_DIR,'mni_masks/wm_mask_mpr_reorient.nii.gz')

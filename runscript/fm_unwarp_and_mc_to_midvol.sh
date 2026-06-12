@@ -79,8 +79,8 @@ if [ "${USE_DVARS}" == "yes" ]; then
   OUTLIER_FILE="${MC_IN%.nii.gz}_ALL_outlier_num.txt"
 elif [ "${USE_DVARS}" == "no" ]; then
   OUTLIER_FILE="${MC_IN%.nii.gz}_FD${FDTHRES}_outlier_num.txt"
-else:
-  echo "USE_DVARS must be set to yes or no
+else
+  echo "USE_DVARS must be set to yes or no"
   exit 1
 fi
 
@@ -118,6 +118,7 @@ if [ "${MIDVOL_SEARCH_STRATEGY}" == "forward" ]; then
       fi
       MIDVOL_NO=$((${MIDVOL_NO} + 1))
   done
+
 # MIDVOL search strategy 2: go back-and-forth $MIDVOL_SEARCH_NITS times
 elif [ "${MIDVOL_SEARCH_STRATEGY}" == "bidirectional" ]; then
   # helper function for implementing bidirectional search
@@ -131,6 +132,7 @@ elif [ "${MIDVOL_SEARCH_STRATEGY}" == "bidirectional" ]; then
 		fi
 	}
 
+    MIDVOL_NO_ORIG=${MIDVOL_NO}
 	for (( i = 1; i <= ${MIDVOL_SEARCH_NITS}; i++ )); do
 			MIDVOL_NO=$(( ${MIDVOL_NO_ORIG} + $(next_midvol $i) ))
 			set +e
