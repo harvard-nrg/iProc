@@ -139,12 +139,14 @@ class jobConstructor(object):
                         if not os.path.exists(d):
                             os.makedirs(d)
                     script = os.path.join(os.path.expanduser(self.conf.iproc.CODEDIR), 'runscript', 'func_from_bids.py')
+                    # changed 2026.07.06 by JS: added skipend
                     cmd = [
                         script,
                         '--input', bids_func_file,
                         '--output', dest_nii,
                         '--sec-base', sec_base,
-                        '--skip', task['SKIP'],
+                        '--skipbegin', task['SKIP'],
+                        '--skipend', task['SKIPEND'],
                         '--num-vol', task['NUMVOL'],
                         '--work-dir', work_dirname,
                         '--num-echos', numechos
@@ -180,12 +182,14 @@ class jobConstructor(object):
                             if not os.path.exists(d):
                                 os.makedirs(d)
                         script = os.path.join(os.path.expanduser(self.conf.iproc.CODEDIR), 'runscript', 'func_from_bids.py')
+                        # changed 2026.07.06 by JS: added skipend
                         cmd = [
                             script,
                             '--input', bids_func_file,
                             '--output', dest_nii,
                             '--sec-base', sec_base,
-                            '--skip', task['SKIP'],
+                            '--skipbegin', task['SKIP'],
+                            '--skipend', task['SKIPEND'],
                             '--num-vol', task['NUMVOL'],
                             '--work-dir', work_dirname,
                             '--num-echos', numechos
@@ -444,6 +448,7 @@ class jobConstructor(object):
                 workdir = os.path.join(self.conf.iproc.WORKDIR, work_name)
                 task = self.scans.task_dict[task_type]
                 SKIP = task['SKIP']
+                SKIPEND = task['SKIPEND'] #added by JS 2026.07.06
                 NUMVOL = task['NUMVOL']
                 
                 
@@ -453,6 +458,7 @@ class jobConstructor(object):
                 if not os.path.exists(file_dir):
                     os.makedirs(file_dir)
 
+                #added SKIPEND, 2026,07.06 by JS
                 cmd=[os.path.join(self.conf.iproc.CODEDIR, 'runscript', 'xnat_to_nii_gz_task.sh'),
                         workdir,
                         sessionid,
@@ -462,6 +468,7 @@ class jobConstructor(object):
                         self.conf.xnat.XNAT_PROJECT,
                         outnii,
                         SKIP,
+                        SKIPEND,
                         NUMVOL,
                         NUMECHOS,
                         self.conf.iproc.QDIR]

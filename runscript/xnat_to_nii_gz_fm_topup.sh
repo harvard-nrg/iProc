@@ -29,7 +29,7 @@ dir2=PA_img
 
 # # # # 
 #Download Magnitude image and convert to nifti
-ArcGet.py -f flat -a ${xnat_alias} -l $sessionid -p $project --scans $first_FM_no -o $dir1
+ArcGet.py -f flat -a ${xnat_alias} -l $sessionid -p $project --scans $first_FM_no -o $dir1 --insecure
 cd $FDIR/$dir1
 dcm=$(ls | head -1)
 ${codedir}/dss.sh $qdir dcm2niix -b y -z y -o . ${dcm}
@@ -38,7 +38,7 @@ mv `ls *.nii.gz | tail -1` ../$dir1.nii.gz #Second image is what we want
 
 #Download Phase image
 cd $FDIR
-ArcGet.py -f flat -a ${xnat_alias} -l $sessionid -p $project --scans $second_FM_no -o $dir2
+ArcGet.py -f flat -a ${xnat_alias} -l $sessionid -p $project --scans $second_FM_no -o $dir2 --insecure
 cd $FDIR/$dir2
 dcm=`ls | head -1`
 

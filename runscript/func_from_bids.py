@@ -23,8 +23,10 @@ def main():
         help='Output destination for floated/reorient/skipped output file')
     parser.add_argument('--sec-base',
         help='Basename for .sec files')
-    parser.add_argument('--skip', type=int,
-        help='Volumes to skip')
+    parser.add_argument('--skipbegin', type=int,
+        help='Volumes to skip at beginning of run')
+    parser.add_argument('--skipend', type=int,
+        help='Volumes to skip at end of run')
     parser.add_argument('--num-vols', type=int,
         help='Volumes to keep (after skipped)')
     parser.add_argument('--work-dir',
@@ -51,9 +53,10 @@ def main():
     reoriented = os.path.join(tempd, 'reoriented')
     forceorient(forced, reoriented)
 
-    # remove volumes from beginning of file
+    # remove volumes from beginning and/or end of file, edited on 2026.07.06 by JS
     skipped = os.path.join(tempd, 'skipped')
-    roi(reoriented, skipped, begin=args.skip, end=args.num_vols)
+    roi(reoriented, skipped, skipbegin=args.skipbegin, num=args.num_vols, skipend=args.skipend)
+
 
     # move files to final destination
     logger.info(f'moving {skipped}.nii.gz to final destination {args.output}')
@@ -115,21 +118,36 @@ def forceorient(input, output, orientation='RADIOLOGICAL'):
         raise FileNotFoundError(f'{output}.nii.gz')
 
 
-def roi(input, output, begin, end):
-    if not begin:
+def roi(input, output, skipbegin, num, skipend):
+    # edited on 2026.07.06 by JS
+    if (not skipbegin) and (not skipend):
         logger.info(f'user does not want any volumes skipped from {input}.nii.gz')
         logger.info(f'renaming {input} to {output}')
         shutil.move(f'{input}.nii.gz', f'{output}.nii.gz')
         #logger.info(f'symlinking {input}.nii.gz to {output}.nii.gz')
         #os.symlink(input, output)
         return
-    cmd = [
-        'fslroi',
-        input,
-        output,
-        str(begin),
-        str(end)
-    ]
+
+    if not skipbegin:
+        # remove at end but NOT beginning
+        cmd = [
+            'fslroi',
+            input,
+            output,
+            '0',
+            str(num)
+        ]
+
+    else:
+        # remove at beginning (and maybe also end?)
+        cmd = [
+            'fslroi',
+            input,
+            output,
+            str(skipbegin),
+            str(num)
+        ]
+
     logger.info(cmd)
     stdout = commons.check_output(cmd)
     if not os.path.exists(f'{output}.nii.gz'):

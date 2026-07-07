@@ -128,10 +128,11 @@ class scansHandler(object):
 
     def ingest_task_csv(self, csv_fname):
         # open reader
+        # added SKIPEND on 2026.07.06 by JS
         with open(csv_fname, newline=None) as f:
             self.csv_errors[csv_fname]=[]
             reader = csv.DictReader(f)
-            schema=['TYPE','TR','SKIP','SMOOTHING','NUMVOL','NUMECHOS']
+            schema=['TYPE','TR','SKIP','SKIPEND','SMOOTHING','NUMVOL','NUMECHOS']
             if not schema == reader.fieldnames:
                 raise KeyError(f'column labels of {csv_fname} do not conform to schema {",".join(schema)}')
             for d in reader:
@@ -142,6 +143,8 @@ class scansHandler(object):
                     self.csv_errors[csv_fname].append(f'TR "{d["TR"]}" has illegal characters')
                 if not re.match(r'[0-9]+\Z',d['SKIP']):#integer
                     self.csv_errors[csv_fname].append(f'SKIP "{d["SKIP"]}" has illegal characters')
+                if not re.match(r'[0-9]+\Z',d['SKIPEND']):#integer
+                    self.csv_errors[csv_fname].append(f'SKIPEND "{d["SKIPEND"]}" has illegal characters')
                 if not re.match(r'[0-9.]+\Z',d['SMOOTHING']):
                     self.csv_errors[csv_fname].append(f'SMOOTHING "{d["SMOOTHING"]}" has illegal characters')
                 if not re.match(r'[0-9]+\Z',d['NUMVOL']):
