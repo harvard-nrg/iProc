@@ -20,7 +20,7 @@ cd $FDIR
 
 # # # # 
 #Download Magnitude image and convert to nifti
-ArcGet.py -f flat -a ${xnat_alias} -l $sessionid -p $project --scans $MNUM -o mag_img
+ArcGet.py -f flat -a ${xnat_alias} -l $sessionid -p $project --scans $MNUM -o mag_img --insecure
 cd $FDIR/mag_img
 dcm=$(ls | head -1)
 echo 'foo'
@@ -29,7 +29,7 @@ mv `ls *.nii.gz | tail -1` ../mag_img.nii.gz
 
 #Download Phase image and convert to nifti
 cd $FDIR
-ArcGet.py -f flat -a ${xnat_alias} -l $sessionid -p $project --scans $PNUM -o pha_img
+ArcGet.py -f flat -a ${xnat_alias} -l $sessionid -p $project --scans $PNUM -o pha_img --insecure
 cd $FDIR/pha_img
 dcm=`ls | head -1`
 ${codedir}/dss.sh $qdir dcm2niix -b y -z y -o . ${dcm}

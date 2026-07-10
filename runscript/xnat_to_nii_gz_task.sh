@@ -12,9 +12,10 @@ project=${6}
 outfile=${7}
 
 SKIP=${8}
-NUMVOL=${9}
-NUMECHOS=${10}
-qdir=${11}
+SKIPEND=${9} #added param 2026.07.06 by JS
+NUMVOL=${10}
+NUMECHOS=${11}
+qdir=${12}
 
 bold_no=$(printf %03d ${task_scan_no})
 fname_base=${sessionid}_bld${bold_no}
@@ -24,7 +25,7 @@ scratch_base=${workdir}/${task_scan_no}/
 mkdir -p $scratch_base
 SCRATCHDIR=$(mktemp --directory --tmpdir=${scratch_base}) #makes the "tmp.*" directory, cd's to that
 
-ArcGet.py -f flat -a ${xnat_alias} --label ${sessionid} --output-dir ${SCRATCHDIR} --scans ${task_scan_no} --project ${project}
+ArcGet.py -f flat -a ${xnat_alias} --label ${sessionid} --output-dir ${SCRATCHDIR} --scans ${task_scan_no} --project ${project} --insecure
 cd ${SCRATCHDIR}
 dcm=`ls | head -1` 	### get first listed file in the scratch directory
 
@@ -61,7 +62,7 @@ if [ $NUMECHOS -eq 1 ]; then
 
 	# check that we have enough time points  
 	total_timepoints=$(fslnvols "${SCRATCHDIR}/tmp.nii.gz" )
-	((requested_timepoints=${SKIP}+${NUMVOL}))
+	((requested_timepoints=${SKIP}+${NUMVOL}+${SKIPEND}))
 	if [ "$total_timepoints" -lt "$requested_timepoints" ]; then
 	    echo "total timepoints are less than the sum of skipped and the numvol set in the task csv."
 	    exit 1
@@ -94,6 +95,7 @@ if [ $NUMECHOS -eq 1 ]; then
 	    exit 1
 	fi
 
+	#edited on 2026.07.06 by JS
 	fslmaths tmp.nii.gz tmp.nii.gz -odt float #convert to float
 	fslroi ${SCRATCHDIR}/tmp ${SCRATCHDIR}/tmp_reorient_skip.nii.gz ${SKIP} ${NUMVOL} #trim extra timepoints
 	rsync --remove-source-files -aP "${SCRATCHDIR}/tmp_reorient_skip.nii.gz" ${outfile}.nii.gz
@@ -113,7 +115,7 @@ else
 
 		# check that we have enough time points  
 		total_timepoints=$(fslnvols "${SCRATCHDIR}/tmp_e${THISECHO}.nii.gz" )
-		((requested_timepoints=${SKIP}+${NUMVOL}))
+		((requested_timepoints=${SKIP}+${NUMVOL}+${SKIPEND}))
 		if [ "$total_timepoints" -lt "$requested_timepoints" ]; then
 		    echo "total timepoints are less than the sum of skipped and the numvol set in the task csv."
 		    exit 1

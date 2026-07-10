@@ -16,7 +16,7 @@ scratch_base=${workdir_anat}/${ANAT_SCAN_NO}
 mkdir -p $scratch_base
 ANAT_SCRATCHDIR=$(mktemp --directory --tmpdir=${scratch_base})
 # automatically creates outdir and downloads dicoms into it
-ArcGet.py -f flat -a ${xnat_alias} --label ${sessionid} --output-dir ${ANAT_SCRATCHDIR} --scans ${ANAT_SCAN_NO} --project ${project}
+ArcGet.py -f flat -a ${xnat_alias} --label ${sessionid} --output-dir ${ANAT_SCRATCHDIR} --scans ${ANAT_SCAN_NO} --project ${project} --insecure
 cd ${ANAT_SCRATCHDIR}
 dcm=`ls | head -1`
 #${codedir}/dss.sh $qdir dcm2nii -r N ${dcm}
