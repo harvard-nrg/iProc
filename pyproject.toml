@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "iProc"
-version = "v2.6.0-beta.4"
+version = "v2.6.1"
 dependencies = [
     "nibabel == 5.3.3",
     "texttable == 0.8.4",
@@ -16,7 +16,7 @@ dependencies = [
     "yaxil == 0.13.1",
     "configparser == 3.5.0"
 ]
-requires-python = ">= 3.8"
+requires-python = ">= 3.9"
 
 [project.scripts]
 "iProc.py" = "iproc.cli.iproc:main"
@@ -27,9 +27,13 @@ docs = [
     "mkdocs-material"
 ]
 
-[tool.hatch.build]
-packages = [
-    "iproc",
-    "iproc.cli",
-    "iproc.steps"
-]
+[tool.hatch.build.targets.sdist]
+include = ["iproc/**"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["iproc"]
+
+[project.urls]
+Repository = "https://github.com/harvard-nrg/iProc"
+Documentation = "https://harvard-nrg.github.io/iProc"
+
