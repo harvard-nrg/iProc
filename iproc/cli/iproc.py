@@ -24,7 +24,6 @@ import iproc.bids as bids
 import iproc.commons as commons
 import iproc.executors as executors
 
-from pathlib import Path
 from iproc import conf,csvHandler
 from iproc.paths import get_codedir
 from iproc.config import ConfigError
