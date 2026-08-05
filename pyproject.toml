@@ -3,18 +3,17 @@ requires = ["hatchling >= 1.26"]
 build-backend = "hatchling.build"
 
 [project]
-name = "iProc-harvard"
+name = "iproc-harvard"
 version = "v4.0.1"
 dependencies = [
     "nibabel == 5.3.3",
     "texttable == 0.8.4",
     "paramiko == 3.3.1",
-    "numpy == 1.25.2",
+    "numpy",
     "scipy == 1.16.3",
     "matplotlib == 3.10.8",
     "PyYAML == 5.2",
     "yaxil == 0.13.1",
-    "configparser == 3.5.0"
 ]
 requires-python = ">= 3.9"
 
