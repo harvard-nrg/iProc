@@ -42,7 +42,7 @@ fslmaths topup_fmap.nii.gz -mul 6.28 ${outfile}.nii.gz
 
 #create magniture image and bet it
 fslmaths se_epi_unwarped.nii.gz -Tmean mag_img.nii.gz
-bet2 mag_img.nii.gz mag_img_brain.nii.gz -m -g 0.1 -f 0.45
+bet2 mag_img.nii.gz mag_img_brain -m -g 0.1 -f 0.45
 fslmaths $FDIR/mag_img_brain -ero $FDIR/mag_img_brain_ero
 cp mag_img_brain_mask.nii.gz $MASK_COPY 
 
