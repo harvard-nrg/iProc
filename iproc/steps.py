@@ -2219,7 +2219,7 @@ class jobConstructor(object):
                 scan_no = bold_scan['BLD']
                 bold_no = "%03d" % int(scan_no)
                 task_dirname  = f'{task_type}_{bold_no}'
-                outputdir = os.path.join(self.conf.iproc.NAT111DIR,  sessionid, task_dirname)
+                outputdir = os.path.join(self.conf.iproc.NAT_RESAMP_DIR,  sessionid, task_dirname)
                 natdir = os.path.join(self.conf.iproc.NATDIR,  sessionid, task_dirname)
                 resid_in = os.path.join(outputdir,"%s_bld%s_reorient_skip_mc_unwarp_anat.nii.gz" % (sessionid,bold_no))
                 despike_out = os.path.join(outputdir, "%s_bld%s_reorient_skip_mc_unwarp_anat_despike.nii.gz" % (sessionid,bold_no))
@@ -2259,7 +2259,7 @@ class jobConstructor(object):
                 scan_no = bold_scan['BLD']
                 bold_no = "%03d" % int(scan_no)
                 task_dirname  = f'{task_type}_{bold_no}'   
-                outputdir = os.path.join(self.conf.iproc.MNI111DIR,  sessionid, task_dirname)
+                outputdir = os.path.join(self.conf.iproc.MNI_RESAMP_DIR,  sessionid, task_dirname)
                 natdir = os.path.join(self.conf.iproc.NATDIR,  sessionid, task_dirname)
                 mni_in = os.path.join(outputdir,"%s_bld%s_reorient_skip_mc_unwarp_anat_mni.nii.gz" % (sessionid,bold_no))
                 despike_out = os.path.join(outputdir, "%s_bld%s_reorient_skip_mc_unwarp_anat_mni_despike.nii.gz" % (sessionid,bold_no))
@@ -2302,7 +2302,7 @@ class jobConstructor(object):
                 bold_no = "%03d" % int(scan_no)
                 task_dirname  = f'{task_type}_{bold_no}'
                     
-                nat111dir = os.path.join(self.conf.iproc.NAT111DIR, sessionid, task_dirname)
+                nat111dir = os.path.join(self.conf.iproc.NAT_RESAMP_DIR, sessionid, task_dirname)
                 nuis_out = os.path.join(nat111dir,"%s_bld%s_reorient_skip_mc_unwarp_anat_nuis.dat" % (sessionid,bold_no))
                 outputdir = None
                 #if anat_space == 'MNI111':
@@ -2364,7 +2364,7 @@ class jobConstructor(object):
                 #    mask = os.path.join(self.conf.template.TEMPLATE_DIR,"anat_mni_underlay_brain_mask.nii.gz")
                 #elif anat_space == 'NAT111':
                 if anat_space == 'NAT111':
-                    outputdir = os.path.join(self.conf.iproc.NAT111DIR, sessionid, task_dirname)
+                    outputdir = os.path.join(self.conf.iproc.NAT_RESAMP_DIR, sessionid, task_dirname)
                     resid_out = os.path.join(outputdir,"%s_bld%s_reorient_skip_mc_unwarp_anat_despike_resid+orig" % (sessionid,bold_no))
                     bpss_out = "%s_bld%s_reorient_skip_mc_unwarp_anat_despike_resid_bpss" % (sessionid,bold_no)
                     mask = os.path.join(self.conf.template.TEMPLATE_DIR,"mpr_reorient_brain_mask.nii.gz")
@@ -2407,27 +2407,30 @@ class jobConstructor(object):
 
          job_spec_list = []
          subjid=self.conf.iproc.SUB
+         FD_LABEL = self.conf.template.FD_LABEL
          for sessionid,sess in self.scans.sessions():
              for task_type,bold_scan in self.scans.tasks():
                  scan_no = bold_scan['BLD']
                  bold_no = "%03d" % int(scan_no)
                  task_dirname  = f'{task_type}_{bold_no}'
-                    
-                 nat111dir = os.path.join(self.conf.iproc.NAT111DIR, sessionid, task_dirname)
+                 natdir = os.path.join(self.conf.iproc.NATDIR,  sessionid, task_dirname)
+                 nat111dir = os.path.join(self.conf.iproc.NAT_RESAMP_DIR, sessionid, task_dirname)
                  #if anat_space == 'MNI111':
                  #    outputdir = os.path.join(self.conf.iproc.MNI111DIR, sessionid, task_dirname)
                  #    resid_in = os.path.join(outputdir,"%s_bld%s_reorient_skip_mc_unwarp_anat_mni.nii.gz" % (sessionid,bold_no))
                  #    wb_ts = os.path.join(outputdir,"%s_bld%s_reorient_skip_mc_unwarp_anat_wb_ts.dat" % (sessionid,bold_no))
                  #    wb_mask = os.path.join(self.conf.template.TEMPLATE_DIR,"mni_masks","wm_mask_1mm.nii.gz")
-                 #    resid_out = "%s_bld%s_reorient_skip_mc_unwarp_anat_mni_wb_resid" % (sessionid,bold_no)
+                 #    resid_out = "%s_bld%s_reorient_skip_mc_unwarp_anat_mni_wbonly" % (sessionid,bold_no)
                  #    mask = os.path.join(self.conf.template.TEMPLATE_DIR,"anat_mni_underlay_brain_mask.nii.gz")
                  if anat_space == 'NAT111':
                      outputdir = nat111dir
                      resid_in = os.path.join(outputdir,"%s_bld%s_reorient_skip_mc_unwarp_anat_despike.nii.gz" % (sessionid,bold_no))
                      wb_ts = os.path.join(outputdir,"%s_bld%s_reorient_skip_mc_unwarp_mni_wb_ts.dat" % (sessionid,bold_no))
                      wb_mask = os.path.join(self.conf.template.TEMPLATE_DIR,"mni_masks","wb_mask_mpr_reorient.nii.gz")
-                     resid_out = "%s_bld%s_reorient_skip_mc_unwarp_anat_despike_wb_resid" % (sessionid,bold_no)
+                     resid_out = "%s_bld%s_reorient_skip_mc_unwarp_anat_despike_wbonly" % (sessionid,bold_no)
                      mask = os.path.join(self.conf.template.TEMPLATE_DIR,"mpr_reorient_brain_mask.nii.gz")
+                     mcout_ts = os.path.join(natdir,f'{sessionid}_bld{bold_no}_reorient_skip_FD{FD_LABEL}_outlier_matrix.dat')
+                     wbmc_ts = os.path.join(outputdir,f'{sessionid}_bld{bold_no}_reorient_skip_wb_ts_mcoutlier.dat')
                  else:
                      raise NotImplementedError('anat_space parameter to nuisance_regress() must be T1 or MNI')
         
@@ -2444,7 +2447,9 @@ class jobConstructor(object):
                      outputdir,
                      mask,
                      self.conf.iproc.CODEDIR,
-                     self.conf.iproc.SCRATCHDIR] 
+                     self.conf.iproc.SCRATCHDIR,
+                     mcout_ts,
+                     wbmc_ts]
 
                  logfile_base = self._io_file_fmt(cmd)
                  job_spec_list.append(JobSpec(cmd,logfile_base,outfiles))
@@ -2452,6 +2457,18 @@ class jobConstructor(object):
          return job_spec_list
 
     def fs6_project_to_surface_despike(self, overwrite=True):
+                     
+        print('------- RUNNING MULTI-ECHO STEPS/FS6_PROJECT_TO_SURF -------')
+        logger.debug('fs6_project_to_surface')
+                     
+        # create fsaverage6 link if not present 
+        subjects_dir = Path(self.conf.fs.SUBJECTS_DIR)
+        target = Path(self.conf.out_atlas.FS6)
+        link = subjects_dir / 'fsaverage6'
+        if not link.exists():
+            logger.info(f'linking {target} to {link}')
+            link.symlink_to(target)
+         
         '''
         Project despiked output file to FS6 surface
         '''
@@ -2471,48 +2488,74 @@ class jobConstructor(object):
                 smooth = task['SMOOTHING']
                 bold_no = "%03d" % int(scan_no)
                 task_dirname  = f'{task_type}_{bold_no}'
-                outputdir = os.path.join(self.conf.iproc.FS6DIR, sessionid, task_dirname)
-                boldpath = os.path.join(self.conf.iproc.NAT111DIR, sessionid, task_dirname)
+                outputdir = os.path.join(
+                    self.conf.iproc.FS6DIR,
+                    sessionid,
+                    task_dirname
+                )    
+                boldpath = os.path.join(
+                    self.conf.iproc.NAT_RESAMP_DIR,
+                    sessionid,
+                    task_dirname
+                )
                 if not os.path.exists(outputdir):
                     os.makedirs(outputdir)
 
                 surfdir = os.path.join(outputdir)
-                bold = '{SESS}_bld{BOLDNO}_reorient_skip_mc_unwarp_anat_despike'.format(SESS=sessionid,BOLDNO=bold_no)
-                bold2 = bold + '_resid_bpss' 
-                bold3 = bold + '_wb_resid'
-                # this is one of the files in the last batch. Not a
-                # comprehensive list of files
-                fname = '{HEM}.{BOLD2}_fsaverage6_sm{SMOOTH}.nii.gz'.format(
-                    HEM='lh',
-                    BOLD2=bold2,
-                    SESS=sessionid,
-                    SMOOTH=smooth
-                )
-                outfiles = [
-                    os.path.join(
+                numechos = self.scans.task_dict[task_type]['NUMECHOS']
+                logger.debug(f'number of echos for {task_type} is {numechos}')
+                if int(numechos) == 1:
+                    logger.info('*** SINGLE-ECHO steps.fs6_project_to_surface')
+                    bold = f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat_despike'
+                    bold2 = bold + '_resid'
+                    bold3 = bold + '_wbonly'
+                    bold4 = bold + '_resid_bpss'
+                    # this is one of the files in the last batch. Not a comprehensive list of files
+                    outfiles = [os.path.join(surfdir,f'lh.{bold2}_fsaverage6_sm{smooth}.nii.gz')]
+
+                    if self._outfiles_skip(overwrite,outfiles):
+                        continue
+
+                    cmd=[os.path.join(self.conf.iproc.CODEDIR,'runscript','fs6_project_to_surf.sh'),
+                        bold,
+                        bold2,
+                        bold3,
+                        sesst,
+                        boldpath,
                         surfdir,
-                        fname
-                    )
-                ]
-        
-                if self._outfiles_skip(overwrite,outfiles):
-                    continue
-            
-                cmd=[os.path.join(self.conf.iproc.CODEDIR,'runscript','fs6_project_to_surf.sh'),
-                    bold,
-                    bold2,
-                    bold3,
-                    sesst,
-                    boldpath,
-                    surfdir,
-                    self.conf.iproc.SCRATCHDIR,  
-                    smooth]
-                 
+                        self.conf.iproc.SCRATCHDIR,
+                        smooth,
+                        bold4]
+                else:
+                    logger.info('*** MULTI-ECHO steps.fs6_project_to_surface')
+                    #bold = f'{sessionid}_bld{bold_no}_reorient_skip_mc_unwarp_anat'
+                    bold_tedanaed = f'{sessionid}_bld{bold_no}_desc-denoised_bold'
+                    bold_out = f'{sessionid}_bld{bold_no}_tedana'
+                    bold_bpss = f'{bold_out}_bpss'
+                    #resid_out = os.path.join(boldpath,'tedana',f'{sessionid}_bld{bold_no}_desc-denoised_bold.nii.gz')
+                    #bold_out = bold + '_tedana'
+                    # this is one of the files in the last batch. Not a comprehensive list of files
+                    outfiles = [os.path.join(surfdir,f'lh.{bold_bpss}_fsaverage6_sm{smooth}.nii.gz')]
+
+                    if self._outfiles_skip(overwrite,outfiles):
+                        continue
+
+                    cmd=[os.path.join(self.conf.iproc.CODEDIR,'runscript','fs6_project_to_surf_ME.sh'),
+                        bold_tedanaed,
+                        bold_out,
+                        bold_bpss,
+                        sesst,
+                        boldpath,
+                        surfdir,
+                        self.conf.iproc.SCRATCHDIR,
+                        smooth]  
+                        
                 logfile_base = self._io_file_fmt(cmd)
                 job_spec_list.append(JobSpec(cmd,logfile_base,outfiles))
-        self.scans.reset_default_sessionid() 
+                        
+        self.scans.reset_default_sessionid()
         return job_spec_list
-            
+                        
     def fs6_project_to_surface(self, overwrite=True):
 
         print('------- RUNNING MULTI-ECHO STEPS/FS6_PROJECT_TO_SURF -------')
