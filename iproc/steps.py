@@ -691,7 +691,7 @@ class jobConstructor(object):
             print(templateOut)
 
             run_cmd = [
-                os.path.join(self.conf.iproc.CODEDIR, 'modwrap.sh'),
+                os.path.join(self.conf.iproc.CODEDIR, 'scripts', 'modwrap.sh'),
                 'module load fsl/4.0.3-ncf',
                 'module load fsl/5.0.4-ncf',
                 os.path.join(self.conf.iproc.CODEDIR, 'runscript', 'fm_unw.sh'),
@@ -1207,7 +1207,7 @@ class jobConstructor(object):
 
                 if int(numechos) == 1:
                     logger.info('***** SINGLE-ECHO steps.combine_warps_parallel*****')
-                    pyscript = os.path.join(self.conf.iproc.CODEDIR,'iProc_p4_sbatch_combined.py')
+                    pyscript = os.path.join(self.conf.iproc.CODEDIR,'scripts', 'iProc_p4_sbatch_combined.py')
                     task_dirname  = f'{task_type}_{bold_no}'
                     outputdir = os.path.join(self.conf.iproc.NATDIR, sessionid, task_dirname)
                     
@@ -1274,7 +1274,7 @@ class jobConstructor(object):
 
                 else: 
                     logger.info('***** MULTI-ECHO steps.combine_warps_parallel*****')
-                    pyscript = os.path.join(self.conf.iproc.CODEDIR,'iProc_p4_sbatch_combined_ME.py')
+                    pyscript = os.path.join(self.conf.iproc.CODEDIR,'scripts', 'iProc_p4_sbatch_combined_ME.py')
                     
                     volnums = [str(n) for n in range(int(numvol))]
 

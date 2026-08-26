@@ -50,7 +50,7 @@ echo "***----- IN MULTI-ECHO VERSION OF XNAT_TO_NII_GZ_TASK -----***"
 #fi
 
 #For multi-echo, this creates a nii.gz volume for EACH echo with _e{echoNum} suffix
-${codedir}/dss.sh $qdir dcm2niix -z y -o . -f ${fname_base} ${dcm}
+${codedir}/scripts/dss.sh $qdir dcm2niix -z y -o . -f ${fname_base} ${dcm}
 
 # --------------------------------------------
 # --------------- SINGLE ECHO ----------------

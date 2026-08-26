@@ -131,7 +131,7 @@ if [ ${NOFM} -eq 1 ]; then
 else 
     # not going to pass on any warpfiles
     echo "------- field map available, running fm_unw for midvol -------"
-    ${CODEDIR}/modwrap.sh 'module load fsl/4.0.3-ncf' 'module load fsl/5.0.4-ncf' ${CODEDIR}/runscript/fm_unw.sh ${FM_SESSID} ${FMdir} ${MIDVOL} ${MIDVOL_UNWARP} ${FM_BOLDNO} ${DEST_DIR} ${WARP_DIR} ${unwarp_direction} ${ME}
+    ${CODEDIR}/scripts/modwrap.sh 'module load fsl/4.0.3-ncf' 'module load fsl/5.0.4-ncf' ${CODEDIR}/runscript/fm_unw.sh ${FM_SESSID} ${FMdir} ${MIDVOL} ${MIDVOL_UNWARP} ${FM_BOLDNO} ${DEST_DIR} ${WARP_DIR} ${unwarp_direction} ${ME}
 fi
 
 flirt -in ${MIDVOL_UNWARP} -ref ${TARGET} -out ${FLIRT_OUT} -omat ${FLIRT_MAT_OUT} -bins 256 -cost corratio -searchrx -180 180 -searchry -180 180 -searchrz -180 180 -dof 12 -interp trilinear 

@@ -20,7 +20,7 @@ ArcGet.py -f flat -a ${xnat_alias} --label ${sessionid} --output-dir ${ANAT_SCRA
 cd ${ANAT_SCRATCHDIR}
 dcm=`ls | head -1`
 #${codedir}/dss.sh $qdir dcm2nii -r N ${dcm}
-${codedir}/dss.sh $qdir dcm2niix -b y -z y -o . ${dcm}
+${codedir}/scripts/dss.sh $qdir dcm2niix -b y -z y -o . ${dcm}
 # here is where BIDS directory would start
 mv *.nii.gz tmp1.nii.gz 
 #mri_convert --left-right-reverse-pix tmp1.nii.gz tmp.nii.gz
