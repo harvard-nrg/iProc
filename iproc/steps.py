@@ -1219,7 +1219,20 @@ class jobConstructor(object):
         if self._outfiles_skip(overwrite,outfiles):
             return([])
         
-        runscript = os.path.join(self.conf.iproc.CODEDIR,'runscript','compute_T1_MNI_warp.sh')
+            if ants:
+                runscript = os.path.join(
+                    self.conf.iproc.CODEDIR,
+                    "runscript",
+                    "compute_T1_MNI_warp_ANTS.sh"
+                )
+            elif fnirt:
+                runscript = os.path.join(
+                    self.conf.iproc.CODEDIR,
+                    "runscript",
+                    "compute_T1_MNI_warp.sh"
+                )
+            else:
+                raise ValueError("Either fnirt or ants must be True")
 
         run_cmd=[
             runscript,
@@ -1255,7 +1268,23 @@ class jobConstructor(object):
         outfiles = [csf_out,wm_out]
         if self._outfiles_skip(overwrite,outfiles):
             return([])
-        runscript = os.path.join(self.conf.iproc.CODEDIR,'runscript','reg_MNI_CSF_WM_to_T1.sh')
+        
+
+            if ants:
+                runscript = os.path.join(
+                    self.conf.iproc.CODEDIR,
+                    "runscript",
+                    "reg_MNI_CSF_WM_to_T1_ANTS.sh"
+                )
+            elif fnirt:
+                runscript = os.path.join(
+                    self.conf.iproc.CODEDIR,
+                    "runscript",
+                    "reg_MNI_CSF_WM_to_T1.sh"
+                )
+            else:
+                raise ValueError("Either fnirt or ants must be True")
+
         run_cmd=[
             runscript,
             self.conf.template.TEMPLATE_DIR,

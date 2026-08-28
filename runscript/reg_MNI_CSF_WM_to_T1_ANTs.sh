@@ -6,7 +6,6 @@ csf_out=${3}
 wm_out=${4}
 maskdir=${5}
 MNI111_ATLAS=${6}
-REG_STRATEGY=${7}
 
 
 #Path to MNI masks
@@ -23,16 +22,8 @@ ln -sf ${csfmask}.nii.gz $TARGDIR/mni_masks/csf_mask.nii.gz
 flirt -in $TARGDIR/mni_masks/csf_mask.nii.gz -applyxfm -init ${FSLDIR}/etc/flirtsch/ident.mat -out $TARGDIR/mni_masks/csf_mask_1mm.nii.gz -paddingsize 0.0 -interp trilinear -ref $MNI111_ATLAS
 flirt -in $TARGDIR/mni_masks/wm_mask.nii.gz -applyxfm -init ${FSLDIR}/etc/flirtsch/ident.mat -out $TARGDIR/mni_masks/wm_mask_1mm.nii.gz -paddingsize 0.0 -interp trilinear -ref $MNI111_ATLAS
 
-
-if [ "${REG_STRATEGY}" == "fnirt" ]; then
-#Project masks to T1
-applywarp --ref=${TARGDIR}/${SESST}_mpr --in=$TARGDIR/mni_masks/csf_mask.nii.gz --warp=${TARGDIR}/MNI_to_${SESST}_mni_underlay.mat.nii.gz --rel --out=$TARGDIR/mni_masks/csf_mask_mpr.nii.gz
-applywarp --ref=${TARGDIR}/${SESST}_mpr --in=$TARGDIR/mni_masks/wm_mask.nii.gz --warp=${TARGDIR}/MNI_to_${SESST}_mni_underlay.mat.nii.gz --rel --out=$TARGDIR/mni_masks/wm_mask_mpr.nii.gz
-
-
 elif [ "${REG_STRATEGY}" == "ants" ]; then
 #Project masks to T1
-#applywarp --ref=${TARGDIR}/${SESST}_mpr --in=$TARGDIR/mni_masks/csf_mask.nii.gz --warp=${TARGDIR}/MNI_to_${SESST}_mni_underlay.mat.nii.gz --rel --out=$TARGDIR/mni_masks/csf_mask_mpr.nii.gz
 antsApplyTransforms --default-value 0 \
   --verbose 1 \
   --dimensionality 3 \
@@ -43,7 +34,6 @@ antsApplyTransforms --default-value 0 \
   --reference-image ${TARGDIR}/${SESST}_mpr.nii.gz \
   --transform ${TARGDIR}/mpr_brain_to_MNI_3_InverseComposite.h5
 
-#applywarp --ref=${TARGDIR}/${SESST}_mpr --in=$TARGDIR/mni_masks/wm_mask.nii.gz --warp=${TARGDIR}/MNI_to_${SESST}_mni_underlay.mat.nii.gz --rel --out=$TARGDIR/mni_masks/wm_mask_mpr.nii.gz
 antsApplyTransforms --default-value 0 \
   --verbose 1 \
   --dimensionality 3 \
