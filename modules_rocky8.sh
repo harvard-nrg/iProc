@@ -15,5 +15,5 @@ module load \
   imagemagick/6.7.8-10-rocky8_x64-ncf \
   ants/2.4.4-rocky8_x64-ncf \
   connectome_workbench/1.3.2-centos6_x64-ncf \
-  dcm2niix/1.0.20230411-rocky8_x64-ncf
-
+  dcm2niix/1.0.20230411-rocky8_x64-ncf \
+  c3d/1.0.0-linux_x64-ncf
