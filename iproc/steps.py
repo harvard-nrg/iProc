@@ -147,10 +147,11 @@ class jobConstructor(object):
                         'session': sanitize(ses),
                         'task': [bids_task_name, bids_task_name.lower()],
                         'run': int(run),
-                        'direction': [direction, direction.lower()],
                         'suffix': 'bold',
                         'extension': '.nii.gz'
                     }
+                    if direction:
+                        params['direction'] = [direction, direction.lower()]
                     logger.info(
                         f'searching for any BIDS files that match '
                         f'query {params}'
