@@ -85,7 +85,7 @@ antsRegistration --verbose 1 \
 
         
 # directory moved to within iProc
-c3dDIR=/ncf/mclaughlin/stressdevlab/STAR/2_scripts/3_Functional/1_iProc_STAR/iProc/runscript/c3d/c3d-1.1.0-Linux-x86_64/bin
+#c3dDIR=/ncf/mclaughlin/stressdevlab/STAR/2_scripts/3_Functional/1_iProc_STAR/iProc/runscript/c3d/c3d-1.1.0-Linux-x86_64/bin
 #/ncf/mclaughlin/stressdevlab/STAR/2_scripts/3_Functional/c3d_test/c3d-1.1.0-Linux-x86_64/bin
     
 # Conversion of ANTS-created affine registration matrix to FSL-compatible affine registration matrix
