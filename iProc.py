@@ -737,6 +737,15 @@ def filter_and_project(steps, args):
     job_spec_list = steps.wholebrain_only_regress(f'NAT{res}', overwrite=args.overwrite)
     rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['wholebrain_only_regress_anat'])
 
+
+    #MNI add despike outputs
+    job_spec_list = steps.nuisance_regress_despike('MNI111', overwrite=args.overwrite)
+    rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['nuisance_regress_mni'])
+    job_spec_list = steps.bandpass_despike('MNI111', overwrite=args.overwrite)
+    rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['bandpass_mni'])
+    job_spec_list = steps.wholebrain_only_regress_despike('MNI111', overwrite=args.overwrite)
+    rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['wholebrain_only_regress_mni'])
+
     #T1 add despike outputs
     job_spec_list = steps.nuisance_regress_despike('NAT111', overwrite=args.overwrite)
     rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['nuisance_regress_anat'])

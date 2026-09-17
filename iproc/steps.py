@@ -2338,7 +2338,7 @@ class jobConstructor(object):
                 if anat_space == 'MNI111':
                     outputdir = os.path.join(self.conf.iproc.MNI111DIR, sessionid, task_dirname)
                     despike_in = os.path.join(outputdir,"%s_bld%s_reorient_skip_mc_unwarp_anat_mni_despike.nii.gz" % (sessionid,bold_no))
-                    despike_resid_out = "%s_bld%s_reorient_skip_mc_unwarp_anat_mni_resid" % (sessionid,bold_no)
+                    despike_resid_out = "%s_bld%s_reorient_skip_mc_unwarp_anat_mni_despike_resid" % (sessionid,bold_no)
                     fullpath_resid_out = os.path.join(outputdir,resid_out)
                     mask = os.path.join(self.conf.template.TEMPLATE_DIR,"anat_mni_underlay_brain_mask.nii.gz")
                     resid_outs = [f.format(fullpath_resid_out) for f in ['{}+tlrc.HEAD','{}+tlrc.BRIK']]
