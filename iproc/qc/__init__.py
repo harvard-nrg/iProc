@@ -7,7 +7,29 @@ import tempfile
 import iproc.commons as commons
 
 logger = logging.getLogger(__name__)
-# probably going to want to create a page factory that produces pages with 
+
+# fslroi silently zero-pads any requested xmin/xsize,ymin/ysize,zmin/zsize that
+# exceeds an image's real dimensions, instead of erroring. The downstream
+# `slicer -S` montage then renders those phantom slices as blank tiles, which
+# shows up as a big white gap in the QC PDF. This bash function clamps a
+# requested window down to the image's actual dims at script-RUNTIME (the
+# image doesn't exist yet when this Python code builds the script, so the
+# check can't be done here in Python).
+CLAMP_WINDOW_DIMS_FUNC = (
+    'clamp_window_dims() { '
+    'local img=$1 xmin=$2 xsize=$3 ymin=$4 ysize=$5 zmin=$6 zsize=$7; '
+    'local d1=$(fslval $img dim1); local d2=$(fslval $img dim2); local d3=$(fslval $img dim3); '
+    'if [ $((xmin+xsize)) -gt $d1 ]; then xsize=$((d1-xmin)); fi; '
+    'if [ $xmin -ge $d1 ]; then xmin=0; xsize=$d1; fi; '
+    'if [ $((ymin+ysize)) -gt $d2 ]; then ysize=$((d2-ymin)); fi; '
+    'if [ $ymin -ge $d2 ]; then ymin=0; ysize=$d2; fi; '
+    'if [ $((zmin+zsize)) -gt $d3 ]; then zsize=$((d3-zmin)); fi; '
+    'if [ $zmin -ge $d3 ]; then zmin=0; zsize=$d3; fi; '
+    'echo "$xmin $xsize $ymin $ysize $zmin $zsize"; '
+    '}'
+)
+
+# probably going to want to create a page factory that produces pages with
 # certain hard-coded values, and others that can vary.
 class page(object):
     # this object holds all the info you need to run a slicer command and 
@@ -57,6 +79,7 @@ class qc_pdf_maker(object):
         # pdf name set. Time to initialize script
         self.script = commons.ScriptBuilder(self.scriptname)
         self.script.blank_file() # make sure script is blank
+        self.script.append([CLAMP_WINDOW_DIMS_FUNC])
         for page in self.pages:
             page.tableau = os.path.join(self.scratch,"tableau_sliced_{SPACE}_{PLANE}.png".format(SPACE=page.infile_basename,PLANE=self.plane))
             self.slicer(page)
@@ -94,9 +117,15 @@ class qc_pdf_maker(object):
         swapdim_cmd = ['fslswapdim', tmpfile] + self.swapdims + [swap]
         self.script.append(swapdim_cmd)
         
-        # extract sub page of nifti 
-        window_dims = page.slicer['window_dims']
-        fslroi_cmd = ['fslroi', swap, roi] + window_dims
+        # extract sub page of nifti, clamping the requested window down to
+        # this specific image's real dimensions at runtime (see
+        # CLAMP_WINDOW_DIMS_FUNC) so fslroi never zero-pads past the edge of
+        # the volume and leaves blank tiles in the slicer montage
+        xmin,xsize,ymin,ysize,zmin,zsize = page.slicer['window_dims']
+        clamp_call = 'read XMIN XSIZE YMIN YSIZE ZMIN ZSIZE <<< "$(clamp_window_dims {img} {xmin} {xsize} {ymin} {ysize} {zmin} {zsize})"'.format(
+            img=swap, xmin=xmin, xsize=xsize, ymin=ymin, ysize=ysize, zmin=zmin, zsize=zsize)
+        self.script.append([clamp_call])
+        fslroi_cmd = ['fslroi', swap, roi, '$XMIN', '$XSIZE', '$YMIN', '$YSIZE', '$ZMIN', '$ZSIZE']
         self.script.append(fslroi_cmd)
 
         #slice the image and put slices together as tiles in a png image
@@ -113,7 +142,7 @@ class qc_pdf_maker(object):
             font = 'Nimbus-Sans-Regular'
         append_cmd = ['convert', sliced, '-font', font, '-background', 'White', '-pointsize', '20',
                     'label:{}'.format(label), '+swap', '-gravity', 'North-West',
-                    '-append', page.tableau]
+                    '-append', '+repage', page.tableau]
         
         self.script.append(append_cmd)
 
