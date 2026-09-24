@@ -7,6 +7,7 @@ import logging
 import argparse as ap
 import tempfile as tf 
 import subprocess as sp
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 import iproc.commons as commons
 
 logger = logging.getLogger(__name__)
