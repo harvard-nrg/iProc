@@ -1219,21 +1219,21 @@ class jobConstructor(object):
         outfiles = [invwarp_out]
         if self._outfiles_skip(overwrite,outfiles):
             return([])
-        
-            if ants:
-                runscript = os.path.join(
-                    self.conf.iproc.CODEDIR,
-                    "runscript",
-                    "compute_T1_MNI_warp_ANTS.sh"
-                )
-            elif fnirt:
-                runscript = os.path.join(
-                    self.conf.iproc.CODEDIR,
-                    "runscript",
-                    "compute_T1_MNI_warp.sh"
-                )
-            else:
-                raise ValueError("Either fnirt or ants must be True")
+
+        if reg_strategy == 'ants':
+            runscript = os.path.join(
+                self.conf.iproc.CODEDIR,
+                "runscript",
+                "compute_T1_MNI_warp_ANTS.sh"
+            )
+        elif reg_strategy == 'fnirt':
+            runscript = os.path.join(
+                self.conf.iproc.CODEDIR,
+                "runscript",
+                "compute_T1_MNI_warp.sh"
+            )
+        else:
+            raise ValueError("reg_strategy must be 'fnirt' or 'ants'")
 
         run_cmd=[
             runscript,
@@ -1269,22 +1269,21 @@ class jobConstructor(object):
         outfiles = [csf_out,wm_out]
         if self._outfiles_skip(overwrite,outfiles):
             return([])
-        
 
-            if ants:
-                runscript = os.path.join(
-                    self.conf.iproc.CODEDIR,
-                    "runscript",
-                    "reg_MNI_CSF_WM_to_T1_ANTS.sh"
-                )
-            elif fnirt:
-                runscript = os.path.join(
-                    self.conf.iproc.CODEDIR,
-                    "runscript",
-                    "reg_MNI_CSF_WM_to_T1.sh"
-                )
-            else:
-                raise ValueError("Either fnirt or ants must be True")
+        if reg_strategy == 'ants':
+            runscript = os.path.join(
+                self.conf.iproc.CODEDIR,
+                "runscript",
+                "reg_MNI_CSF_WM_to_T1_ANTS.sh"
+            )
+        elif reg_strategy == 'fnirt':
+            runscript = os.path.join(
+                self.conf.iproc.CODEDIR,
+                "runscript",
+                "reg_MNI_CSF_WM_to_T1.sh"
+            )
+        else:
+            raise ValueError("reg_strategy must be 'fnirt' or 'ants'")
 
         run_cmd=[
             runscript,
