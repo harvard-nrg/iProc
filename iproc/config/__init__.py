@@ -1,7 +1,5 @@
 import configparser
 
-from .schema import validate_config, ConfigValidationError
-
 class Config(object):
     def __init__(self):
         self._config = None
@@ -20,6 +18,7 @@ class Config(object):
 
         Raises ConfigError with all validation failures if invalid.
         """
+        from .schema import validate_config, ConfigValidationError
         try:
             validate_config(self._config)
         except ConfigValidationError as e:
