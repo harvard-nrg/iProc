@@ -32,6 +32,7 @@ mni_mean_qc,run,default,0-0:45,5GB,default
 fslmerge_meantime_mni_midvols,run,default,0-0:15,5GB,default
 mni_midvols_qc,run,default,0-0:45,5GB,default
 calculate_nuisance_params,run,default,0-3:00,180GB,48
+despike,run,default,0-2:00,50GB,4
 nuisance_regress_mni,run,default,0-4:00,100GB,3
 bandpass_mni,run,default,0-6:40,40GB,default
 wholebrain_only_regress_mni,run,default,0-4:00,100GB,3
