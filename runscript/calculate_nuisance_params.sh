@@ -60,7 +60,7 @@ pushd $tmpdir
 
 #without MATLAB
 echo ${CODE_DIR}
-python ${CODE_DIR}/runscript/calculate_nuisance_params.py ${NUIS_TS} ${tmpdir}
+${PYTHON:-python} ${CODE_DIR}/runscript/calculate_nuisance_params.py ${NUIS_TS} ${tmpdir}
 
 
 rsync -av $tmpdir/nuis_out.dat "${NUIS_OUT_NOCENSOR}"

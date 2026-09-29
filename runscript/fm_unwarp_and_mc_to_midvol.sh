@@ -169,7 +169,7 @@ echo ${MIDVOL_NO} > ${MC_IN%.nii.gz}_FinalMidVol.txt
 
 # create motion outlier matrix
 OUTLIERMATRIX="${MC_IN%.nii.gz}_FD${FDTHRES}_outlier_matrix.dat"
-python ${CODEDIR}/runscript/create_motion_outlier_matrix.py $OUTLIER_FILE $NUMVOL $OUTLIERMATRIX
+${PYTHON:-python} ${CODEDIR}/runscript/create_motion_outlier_matrix.py $OUTLIER_FILE $NUMVOL $OUTLIERMATRIX
 
 # motion estimation and correction (within-run alignment)
 mcflirt -in ${MC_IN} -out ${MC_OUT} -refvol ${MIDVOL_NO} -mats -plots -rmsrel -rmsabs -report  ## need this but after the specific middle volume has been selected & applying this to that.

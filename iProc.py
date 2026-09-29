@@ -1305,6 +1305,8 @@ def main():
     else:
         os.environ['IPROC_SRUN'] = "YES"
 
+    os.environ['PYTHON'] = sys.executable
+
     # configure logging
     level = logging.DEBUG if args.debug else logging.INFO
     log_path = configure_logging(level)
