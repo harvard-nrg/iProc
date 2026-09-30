@@ -18,7 +18,7 @@ cd $SCRATCHDIR
 #cd $OUTDIR
 
 echo "If script fails, run: cd $SCRATCHDIR; rm ${BPSS_OUT}+*.BRIK ${BPSS_OUT}+*.HEAD"
-cpus=$(python -c "import os; cpus=len(os.sched_getaffinity(0)); print(cpus)")
+cpus=$(${PYTHON:-python} -c "import os; cpus=len(os.sched_getaffinity(0)); print(cpus)")
 export OMP_NUM_THREADS=${cpus}
 echo "OMP_NUM_THREADS=${OMP_NUM_THREADS}"
 

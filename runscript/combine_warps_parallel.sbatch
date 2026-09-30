@@ -22,7 +22,7 @@ pushd $SCRATCHDIR
 
 fslsplit ${SPLIT_IN} ./time_point_
 
-${pyscript} -m ${MATDIR} -n ${NUMVOLS} -o ${OUTDIR} -s ${SUBID} -t ${TASK} -x ${SESSID} -b ${BOLDNO} --template-dir ${TEMPLATE_DIR} --destination-space ${SPACE} --mni-atlas ${MNI_ATLAS} --preptool ${PREPTOOL} --scratch=$SCRATCHDIR
+${PYTHON:-python} ${pyscript} -m ${MATDIR} -n ${NUMVOLS} -o ${OUTDIR} -s ${SUBID} -t ${TASK} -x ${SESSID} -b ${BOLDNO} --template-dir ${TEMPLATE_DIR} --destination-space ${SPACE} --mni-atlas ${MNI_ATLAS} --preptool ${PREPTOOL} --scratch=$SCRATCHDIR
 
 popd 
 

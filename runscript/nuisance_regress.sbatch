@@ -18,7 +18,7 @@ cd $SCRATCHDIR
 nuis_name=$(basename ${NUIS_OUT})
 cp $NUIS_OUT ./${nuis_name}_tmp 
 
-cpus=$(python -c "import os; cpus=len(os.sched_getaffinity(0)); print(cpus)")
+cpus=$(${PYTHON:-python} -c "import os; cpus=len(os.sched_getaffinity(0)); print(cpus)")
 export OMP_NUM_THREADS=${cpus}
 echo "OMP_NUM_THREADS=${OMP_NUM_THREADS}"
 
