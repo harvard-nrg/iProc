@@ -134,3 +134,5 @@ outname2=${TARGDIR}/anat_mni_underlay_brain_mask # T1 in MNI space
 fi 
 
 fslmaths ${outname1} -bin ${outname2}
+
+ln -sf ${outname2}.nii.gz ${TARGDIR}/mni_masks/wb_mask_1mm.nii.gz

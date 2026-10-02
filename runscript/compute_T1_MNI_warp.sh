@@ -25,3 +25,5 @@ outname2=${TARGDIR}/anat_mni_underlay_brain_mask
 applywarp --ref=${TARGDIR}/anat_mni_underlay.nii.gz --in=${inname1} --warp=${TARGDIR}/mpr_to_mni_FNIRT.mat.nii.gz --rel --out=${outname1}
 
 fslmaths ${outname1} -bin ${outname2}
+
+ln -sf ${outname2}.nii.gz ${TARGDIR}/mni_masks/wb_mask_1mm.nii.gz
