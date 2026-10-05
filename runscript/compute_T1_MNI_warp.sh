@@ -26,4 +26,5 @@ applywarp --ref=${TARGDIR}/anat_mni_underlay.nii.gz --in=${inname1} --warp=${TAR
 
 fslmaths ${outname1} -bin ${outname2}
 
+mkdir -p ${TARGDIR}/mni_masks
 ln -sf ${outname2}.nii.gz ${TARGDIR}/mni_masks/wb_mask_1mm.nii.gz
