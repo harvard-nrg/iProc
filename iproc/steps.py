@@ -2335,7 +2335,7 @@ class jobConstructor(object):
                 nuis_out = os.path.join(nat111dir,"%s_bld%s_reorient_skip_mc_unwarp_anat_nuis.dat" % (sessionid,bold_no))
                 outputdir = None
                 if anat_space == 'MNI111':
-                    outputdir = os.path.join(self.conf.iproc.MNI111DIR, sessionid, task_dirname)
+                    outputdir = os.path.join(self.conf.iproc.MNI_RESAMP_DIR, sessionid, task_dirname)
                     despike_in = os.path.join(outputdir,"%s_bld%s_reorient_skip_mc_unwarp_anat_mni_despike.nii.gz" % (sessionid,bold_no))
                     despike_resid_out = "%s_bld%s_reorient_skip_mc_unwarp_anat_mni_despike_resid" % (sessionid,bold_no)
                     fullpath_resid_out = os.path.join(outputdir,resid_out)
@@ -2386,7 +2386,7 @@ class jobConstructor(object):
                 bold_no = "%03d" % int(scan_no)
                 task_dirname  = f'{task_type}_{bold_no}'
                 if anat_space == 'MNI111':
-                    outputdir = os.path.join(self.conf.iproc.MNI111DIR, sessionid, task_dirname)
+                    outputdir = os.path.join(self.conf.iproc.MNI_RESAMP_DIR, sessionid, task_dirname)
                     resid_out = os.path.join(outputdir,"%s_bld%s_reorient_skip_mc_unwarp_anat_mni_despike_resid+tlrc" % (sessionid,bold_no))
                     bpss_out = "%s_bld%s_reorient_skip_mc_unwarp_anat_mni_despike_resid_bpss" % (sessionid,bold_no)
                     mask = os.path.join(self.conf.template.TEMPLATE_DIR,"anat_mni_underlay_brain_mask.nii.gz")
@@ -2443,7 +2443,7 @@ class jobConstructor(object):
                  natdir = os.path.join(self.conf.iproc.NATDIR,  sessionid, task_dirname)
                  nat111dir = os.path.join(self.conf.iproc.NAT_RESAMP_DIR, sessionid, task_dirname)
                  if anat_space == 'MNI111':
-                     outputdir = os.path.join(self.conf.iproc.MNI111DIR, sessionid, task_dirname)
+                     outputdir = os.path.join(self.conf.iproc.MNI_RESAMP_DIR, sessionid, task_dirname)
                      resid_in = os.path.join(outputdir,"%s_bld%s_reorient_skip_mc_unwarp_anat_mni_despike.nii.gz" % (sessionid,bold_no))
                      wb_ts = os.path.join(outputdir,"%s_bld%s_reorient_skip_mc_unwarp_anat_wb_ts.dat" % (sessionid,bold_no))
                      wb_mask = os.path.join(self.conf.template.TEMPLATE_DIR,"mni_masks","wb_mask_1mm.nii.gz")
