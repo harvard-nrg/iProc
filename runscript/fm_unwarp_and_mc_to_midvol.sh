@@ -58,28 +58,24 @@ if [[ ! -e ${MC_IN%.nii.gz}_FD${FDTHRES}_outlier_num.txt ]]; then
   touch ${MC_IN%.nii.gz}_FD${FDTHRES}_outlier_num.txt
 fi
 
-# calculate DVARS (derivative of RMS variance) 
-# this is typically used in developmental studies
-if [[ ! -e ${MC_IN%.nii.gz}_DVARS_vals.txt ]]; then
-  fsl_motion_outliers -i ${MC_IN} -o ${MC_IN%.nii.gz}_DVARS_outlier_mat.txt -s ${MC_IN%.nii.gz}_DVARS_vals.txt -p ${MC_IN%.nii.gz}_DVARS.png --dvars -v > ${MC_IN%.nii.gz}_fsl_motion_outlier_DVARS_output.txt
-fi
-grep 'Found spikes at' ${MC_IN%.nii.gz}_fsl_motion_outlier_DVARS_output.txt > ${MC_IN%.nii.gz}_tmp2.txt
-set +e
-grep -Eo '[0-9]{1,4}' ${MC_IN%.nii.gz}_tmp2.txt > ${MC_IN%.nii.gz}_DVARS_outlier_num.txt
-set -e
-touch ${MC_IN%.nii.gz}_DVARS_outlier_num.txt
-# Combined and remove duplicate flagged volume outliers into a single matrix
-echo checking FD ${FDThres} and DVARS "(default = P75 + 1.5*IQR)" outliers for overlap
-sort -u -n ${MC_IN%.nii.gz}_*outlier_num.txt > ${MC_IN%.nii.gz}_ALL_outlier_num.txt
-echo ${MC_IN%.nii.gz}_ALL_outlier_num.txt contains all outliers
-
-# calculating percentage of outliers based on FDTHRES
 OUTLIER_FILE="${MC_IN%.nii.gz}_FD${FDTHRES}_outlier_num.txt"
+
+# DVARS (derivative of RMS variance) is opt-in; typically used in developmental studies
 if [ "${USE_DVARS}" == "yes" ]; then
+  if [[ ! -e ${MC_IN%.nii.gz}_DVARS_vals.txt ]]; then
+    fsl_motion_outliers -i ${MC_IN} -o ${MC_IN%.nii.gz}_DVARS_outlier_mat.txt -s ${MC_IN%.nii.gz}_DVARS_vals.txt -p ${MC_IN%.nii.gz}_DVARS.png --dvars -v > ${MC_IN%.nii.gz}_fsl_motion_outlier_DVARS_output.txt
+  fi
+  grep 'Found spikes at' ${MC_IN%.nii.gz}_fsl_motion_outlier_DVARS_output.txt > ${MC_IN%.nii.gz}_tmp2.txt
+  set +e
+  grep -Eo '[0-9]{1,4}' ${MC_IN%.nii.gz}_tmp2.txt > ${MC_IN%.nii.gz}_DVARS_outlier_num.txt
+  set -e
+  touch ${MC_IN%.nii.gz}_DVARS_outlier_num.txt
+  # combine FD and DVARS outliers, removing duplicates
+  echo checking FD ${FDThres} and DVARS "(default = P75 + 1.5*IQR)" outliers for overlap
+  sort -u -n ${OUTLIER_FILE} ${MC_IN%.nii.gz}_DVARS_outlier_num.txt > ${MC_IN%.nii.gz}_ALL_outlier_num.txt
+  echo ${MC_IN%.nii.gz}_ALL_outlier_num.txt contains all outliers
   OUTLIER_FILE="${MC_IN%.nii.gz}_ALL_outlier_num.txt"
-elif [ "${USE_DVARS}" == "no" ]; then
-  OUTLIER_FILE="${MC_IN%.nii.gz}_FD${FDTHRES}_outlier_num.txt"
-else
+elif [ "${USE_DVARS}" != "no" ]; then
   echo "USE_DVARS must be set to yes or no"
   exit 1
 fi

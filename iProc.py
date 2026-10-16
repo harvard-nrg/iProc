@@ -714,11 +714,13 @@ def filter_and_project(steps, args):
     rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['calculate_nuisance_params'])
     ## can these be run all at the same time? I think so
 
-    # Adding despike function
-    job_spec_list = steps.despike(overwrite=args.overwrite)
-    rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['despike'])
-    job_spec_list = steps.despike_mni(overwrite=args.overwrite)
-    rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['despike'])
+    # despike outputs are opt-in via a 'despike' row in the cluster requests csv
+    run_despike = 'despike' in args.cluster and args.cluster['despike']['RUNMODE'] != 'SKIP'
+    if run_despike:
+        job_spec_list = steps.despike(overwrite=args.overwrite)
+        rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['despike'])
+        job_spec_list = steps.despike_mni(overwrite=args.overwrite)
+        rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['despike'])
 
     #MNI
     res = conf.out_atlas.RESOLUTION
@@ -738,23 +740,24 @@ def filter_and_project(steps, args):
     rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['wholebrain_only_regress_anat'])
 
 
-    #MNI add despike outputs
-    job_spec_list = steps.nuisance_regress_despike('MNI111', overwrite=args.overwrite)
-    rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['nuisance_regress_mni'])
-    job_spec_list = steps.bandpass_despike('MNI111', overwrite=args.overwrite)
-    rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['bandpass_mni'])
-    job_spec_list = steps.wholebrain_only_regress_despike('MNI111', overwrite=args.overwrite)
-    rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['wholebrain_only_regress_mni'])
+    if run_despike:
+        #MNI add despike outputs
+        job_spec_list = steps.nuisance_regress_despike('MNI111', overwrite=args.overwrite)
+        rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['nuisance_regress_mni'])
+        job_spec_list = steps.bandpass_despike('MNI111', overwrite=args.overwrite)
+        rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['bandpass_mni'])
+        job_spec_list = steps.wholebrain_only_regress_despike('MNI111', overwrite=args.overwrite)
+        rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['wholebrain_only_regress_mni'])
 
-    #T1 add despike outputs
-    job_spec_list = steps.nuisance_regress_despike('NAT111', overwrite=args.overwrite)
-    rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['nuisance_regress_anat'])
-    job_spec_list = steps.bandpass_despike('NAT111', overwrite=args.overwrite)
-    rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['bandpass_anat'])
-    job_spec_list = steps.wholebrain_only_regress_despike('NAT111', overwrite=args.overwrite)
-    rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['wholebrain_only_regress_anat'])
-    job_spec_list = steps.fs6_project_to_surface_despike(overwrite=args.overwrite)
-    rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['fs6_project_to_surface']) #maybe 150GB
+        #T1 add despike outputs
+        job_spec_list = steps.nuisance_regress_despike('NAT111', overwrite=args.overwrite)
+        rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['nuisance_regress_anat'])
+        job_spec_list = steps.bandpass_despike('NAT111', overwrite=args.overwrite)
+        rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['bandpass_anat'])
+        job_spec_list = steps.wholebrain_only_regress_despike('NAT111', overwrite=args.overwrite)
+        rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['wholebrain_only_regress_anat'])
+        job_spec_list = steps.fs6_project_to_surface_despike(overwrite=args.overwrite)
+        rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['fs6_project_to_surface']) #maybe 150GB
 
     # step 6
     job_spec_list = steps.fs6_project_to_surface(overwrite=args.overwrite)
@@ -1247,6 +1250,9 @@ def main():
     allowed_fmap_regimes = ['topup','fsl_prepare_fieldmap','none']
     if not conf.fmap.preptool in allowed_fmap_regimes:
         logger.error(f'{args.config_file} must have a fmap:preptool value matching one of {allowed_fmap_regimes}')
+        exit(1)
+    if conf.get('template', 'reg_strategy', default='fnirt') == 'ants':
+        logger.error(f'{args.config_file}: template:reg_strategy = ants is not supported yet (ANTs registration is being developed on a separate branch). Use fnirt.')
         exit(1)
 
     conf.iproc.WORKDIR = os.path.join(conf.iproc.SCRATCHDIR,str(int(time.time())))

@@ -13,13 +13,13 @@ SCHEMA = {
             'logdir': {'type': 'string', 'required': True},
             'scratchdir': {'type': 'string', 'required': True},
             'masksdir': {'type': 'string', 'required': True},
-            'font': {'type': 'string', 'required': True},
+            'font': {'type': 'string', 'required': False},
             'codedir': {'type': 'string', 'required': False},
         },
     },
     'xnat': {
         'type': 'dict',
-        'required': True,
+        'required': False,
         'schema': {
             'xnat_alias': {'type': 'string', 'required': True},
             'xnat_project': {'type': 'string', 'required': True},
@@ -40,10 +40,15 @@ SCHEMA = {
                 'allowed': ['forward', 'bidirectional'],
             },
             'midvol_search_nits': {'type': 'integer', 'required': False, 'coerce': int},
-            'use_dvars': {
+            'midvol_use_dvars': {
                 'type': 'string',
                 'required': False,
                 'allowed': ['yes', 'no'],
+            },
+            'reg_strategy': {
+                'type': 'string',
+                'required': False,
+                'allowed': ['fnirt', 'ants'],
             },
         },
     },

@@ -199,10 +199,18 @@ def sanitize(s):
     regex = re.compile('[^a-zA-Z0-9]')
     return regex.sub('', s)
 
-def split_task(s): 
+def split_task(s):
+    regex = re.compile(r'([a-zA-Z]+)_?(\d+)?')
+    match = regex.match(s)
+    if not match:
+        raise SplitTaskError(f'failed to split task "{s}"')
+    task,run = match.groups('1')
+    return task,run
+
+def split_task_direction(s):
     regex = re.compile(r'([a-zA-Z0-9]+)_?([a-zA-Z0-9]+)?_?(\d+)?')
-    match = regex.match(s) 
-    if not match: 
-        raise SplitTaskError(f'failed to split task "{s}"') 
+    match = regex.match(s)
+    if not match:
+        raise SplitTaskError(f'failed to split task "{s}"')
     task,direction,run = match.groups()
     return task,direction,run

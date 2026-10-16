@@ -24,9 +24,8 @@ import tempfile
 import datetime
 import collections
 import iproc.commons as commons
-from iproc.bids import sanitize,split_task
+from iproc.bids import sanitize,split_task,split_task_direction
 from pathlib import Path
-from bids import BIDSLayout
 
 #get logger from calling script
 logger = logging.getLogger(__name__)
@@ -47,6 +46,27 @@ class jobConstructor(object):
         # TODO: remove moribund function
         self.steplog_base = os.path.join(self.conf.iproc.LOGDIR, 'stepLog')
 
+    def _find_bids_file(self, legacy_basename, params):
+        # prefer the exact filename main has always used; query pybids only if it's missing
+        legacy_file = os.path.join(self.args.bids, legacy_basename)
+        if os.path.exists(legacy_file):
+            return legacy_file
+        from bids import BIDSLayout
+        logger.info(f'searching for any BIDS files that match query {params}')
+        layout = BIDSLayout(self.args.bids, validate=False)
+        files = layout.get(return_type='file', **params)
+        if not files:
+            raise FileNotFoundError(
+                f'could not locate {legacy_file} or any files under '
+                f'{self.args.bids} that match query {params}'
+            )
+        if len(files) > 1:
+            raise ValueError(
+                f'found {len(files)} files under {self.args.bids} '
+                f'that match query {params}'
+            )
+        return files[0]
+
     def anat_from_bids(self,overwrite=True):
         stepname_base = 'anat_from_bids'
         logger.debug(stepname_base)
@@ -62,7 +82,7 @@ class jobConstructor(object):
                 logger.info(f'processing sub={sub}, ses={ses}, anat={run}')
                 match = re.match('ANAT_(.*?)_.*', anat_scan['TYPE'])
                 acq = match.group(1) if match else None
-                # use pybids to find the T1w file we're looking for
+                legacy_basename = f'ses-{sanitize(ses)}/anat/sub-{sanitize(sub)}_ses-{sanitize(ses)}_run-{run}_T1w.nii.gz'
                 params = {
                     'subject': sanitize(sub),
                     'session': sanitize(ses),
@@ -71,21 +91,7 @@ class jobConstructor(object):
                     'suffix': 'T1w',
                     'extension': '.nii.gz'
                 }
-                logger.info(f'searching for any BIDS files that match query {params}')
-                layout = BIDSLayout(self.args.bids, validate=False)
-                files = layout.get(return_type='file', **params)
-                matches = len(files)
-                if not matches:
-                    raise FileNotFoundError(
-                        f'could not locate any files under {self.args.bids} '
-                        f'that match query {params}'
-                    )
-                elif matches > 1:
-                    raise ValueError(
-                        f'found {matches} files under {self.args.bids} '
-                        f'that match query {params}'
-                    )
-                bids_anat_file = files.pop()
+                bids_anat_file = self._find_bids_file(legacy_basename, params)
                 # this is the DICOM SeriesNumber, not the BIDS run number
                 run_zpad = f'{int(self.scans.scan_no):03d}'
                 anat_basename = f'{ses}_mpr{run_zpad}'
@@ -124,7 +130,8 @@ class jobConstructor(object):
             ses = sessionid
             for task_name,bold_scan in self.scans.tasks():
                 task = self.scans.task_dict[task_name]
-                bids_task_name,direction,_ = split_task(task_name)
+                legacy_task_name,_ = split_task(task_name)
+                bids_task_name,direction,_ = split_task_direction(task_name)
                 numechos = task['NUMECHOS']
                 logger.debug(f'number of echos for {task_name} is {numechos}')
                 run = bold_scan['BIDS_ID']
@@ -142,6 +149,7 @@ class jobConstructor(object):
 
                 if int(numechos) == 1:
                     logger.info('*** SINGLE-ECHO steps.func_from_bids')
+                    legacy_basename = f'ses-{sanitize(ses)}/func/sub-{sanitize(sub)}_ses-{sanitize(ses)}_task-{legacy_task_name}_run-{run}_bold.nii.gz'
                     params = {
                         'subject': sanitize(sub),
                         'session': sanitize(ses),
@@ -152,24 +160,7 @@ class jobConstructor(object):
                     }
                     if direction:
                         params['direction'] = [direction, direction.lower()]
-                    logger.info(
-                        f'searching for any BIDS files that match '
-                        f'query {params}'
-                    )
-                    layout = BIDSLayout(self.args.bids, validate=False)
-                    files = layout.get(return_type='file', **params)
-                    matches = len(files)
-                    if not matches:
-                        raise FileNotFoundError(
-                            f'could not locate any files under '
-                            f'{self.args.bids} that match query {params}'
-                        )
-                    elif matches > 1:
-                        raise ValueError(
-                            f'found {matches} files under {self.args.bids} '
-                            f'that match query {params}'
-                        )
-                    bids_func_file = files.pop()
+                    bids_func_file = self._find_bids_file(legacy_basename, params)
                     run_zpad = f'{int(bold_scan["BLD"]):03d}'
 
                     task_dirname = os.path.join(self.conf.iproc.NATDIR, ses, f'{task_name}_{run_zpad}')
@@ -211,8 +202,9 @@ class jobConstructor(object):
                 else:
                     logger.info('*** MULTI-ECHO steps.func_from_bids')
                     for iEcho in range(1,int(numechos) + 1):
-                        basename = f'ses-{sanitize(ses)}/func/sub-{sanitize(sub)}_ses-{sanitize(ses)}_task-{bids_task_name}_run-{run}_echo-{iEcho}_bold.nii.gz'
-                        bids_func_file = os.path.join(self.args.bids, basename)
+                        legacy_file = os.path.join(self.args.bids, f'ses-{sanitize(ses)}/func/sub-{sanitize(sub)}_ses-{sanitize(ses)}_task-{legacy_task_name}_run-{run}_echo-{iEcho}_bold.nii.gz')
+                        new_file = os.path.join(self.args.bids, f'ses-{sanitize(ses)}/func/sub-{sanitize(sub)}_ses-{sanitize(ses)}_task-{bids_task_name}_run-{run}_echo-{iEcho}_bold.nii.gz')
+                        bids_func_file = legacy_file if os.path.exists(legacy_file) else new_file
                         run_zpad = f'{int(bold_scan["BLD"]):03d}'
 
                         task_dirname = os.path.join(self.conf.iproc.NATDIR, ses, f'{task_name}_{run_zpad}')
