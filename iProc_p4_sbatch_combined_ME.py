@@ -182,12 +182,16 @@ parser.add_argument("--scratch", required=True,
     help="scratch directory to use for convert_mat output.")
 parser.add_argument("-a", "--mni-atlas",  
     help="mni atlas to use.")
-parser.add_argument("-e", "--echo-num", required=True, 
+parser.add_argument("-e", "--echo-num", required=True,
     help="echo number of this volume")
+parser.add_argument("--t1-to-mni-warp",
+    help="FSL-format T1-to-MNI warp (default: mpr_to_mni_FNIRT.mat.nii.gz in --template-dir)")
 # TODO: no-unwarp
 args = parser.parse_args()
 if args.destination_space == "MNI" and not args.mni_atlas:
     parser.error("MNI --destination-space specified, but --mni-atlas not specified")
+if not args.t1_to_mni_warp:
+    args.t1_to_mni_warp = os.path.join(args.template_dir, 'mpr_to_mni_FNIRT.mat.nii.gz')
 
 # print information about program and machine
 logger.info(program(sys.argv))
@@ -231,7 +235,7 @@ if args.preptool == "none":
         omat = os.path.join(args.output_dir, f'{args.bold_no}_to_anat.mat')
         comb_mat = os.path.join(args.output_dir, f'{args.bold_no}_to_MNI.mat')
         target = os.path.join(args.mni_atlas)
-        std_mat = os.path.join(args.template_dir, 'mpr_to_mni_FNIRT.mat.nii.gz')
+        std_mat = args.t1_to_mni_warp
 
         cmd = f'convertwarp --ref={target} --warp1={std_mat} --premat={omat} --out={comb_mat} --relout'
         print(cmd)
@@ -255,7 +259,7 @@ else:
         omat = os.path.join(args.output_dir, f'{args.bold_no}_to_anat.mat')
         comb_mat = os.path.join(args.output_dir, f'{args.bold_no}_to_MNI.mat')
         target = os.path.join(args.mni_atlas)
-        std_mat = os.path.join(args.template_dir, 'mpr_to_mni_FNIRT.mat.nii.gz')
+        std_mat = args.t1_to_mni_warp
 
         cmd = f'convertwarp --ref={target} --warp1={std_mat} --premat={omat} --out={comb_mat} --relout'
         print(cmd)

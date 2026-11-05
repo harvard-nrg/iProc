@@ -1251,9 +1251,6 @@ def main():
     if not conf.fmap.preptool in allowed_fmap_regimes:
         logger.error(f'{args.config_file} must have a fmap:preptool value matching one of {allowed_fmap_regimes}')
         exit(1)
-    if conf.get('template', 'reg_strategy', default='fnirt') == 'ants':
-        logger.error(f'{args.config_file}: template:reg_strategy = ants is not supported yet (ANTs registration is being developed on a separate branch). Use fnirt.')
-        exit(1)
 
     conf.iproc.WORKDIR = os.path.join(conf.iproc.SCRATCHDIR,str(int(time.time())))
     #commons.move_on_exit(conf.iproc.WORKDIR, conf.iproc.OUTDIR)

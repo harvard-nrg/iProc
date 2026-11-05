@@ -1207,7 +1207,9 @@ class jobConstructor(object):
             default='fnirt'
         )
 
-        invwarp_out = f'{self.conf.template.TEMPLATE_DIR}/MNI_to_{self.conf.T1.T1_SESS}_mni_underlay.mat.nii.gz'
+        # strategy-specific name, so switching strategies reruns this step instead of skipping it
+        invwarp_suffix = '_ANTs' if reg_strategy == 'ants' else ''
+        invwarp_out = f'{self.conf.template.TEMPLATE_DIR}/MNI_to_{self.conf.T1.T1_SESS}_mni_underlay{invwarp_suffix}.mat.nii.gz'
         outfiles = [invwarp_out]
         if self._outfiles_skip(overwrite,outfiles):
             return([])
@@ -1216,7 +1218,7 @@ class jobConstructor(object):
             runscript = os.path.join(
                 self.conf.iproc.CODEDIR,
                 "runscript",
-                "compute_T1_MNI_warp_ANTS.sh"
+                "compute_T1_MNI_warp_ANTs.sh"
             )
         elif reg_strategy == 'fnirt':
             runscript = os.path.join(
@@ -1266,7 +1268,7 @@ class jobConstructor(object):
             runscript = os.path.join(
                 self.conf.iproc.CODEDIR,
                 "runscript",
-                "reg_MNI_CSF_WM_to_T1_ANTS.sh"
+                "reg_MNI_CSF_WM_to_T1_ANTs.sh"
             )
         elif reg_strategy == 'fnirt':
             runscript = os.path.join(
@@ -1343,6 +1345,12 @@ class jobConstructor(object):
         self.scans.reset_default_sessionid()
         return job_spec_list
     
+    def _t1_to_mni_warp(self):
+        # FSL-format T1-to-MNI warp written by compute_T1_MNI_warp for the configured reg_strategy
+        reg_strategy = self.conf.get('template', 'reg_strategy', default='fnirt')
+        warp_name = 'mpr_to_mni_ANTs.mat.nii.gz' if reg_strategy == 'ants' else 'mpr_to_mni_FNIRT.mat.nii.gz'
+        return os.path.join(self.conf.template.TEMPLATE_DIR, warp_name)
+
     def combine_warps_parallel(self, anat_space, overwrite=True):
         # this combines and applies warps across all slices of the BOLD data,
         # moving it, one time point at a time, into an output volume space.
@@ -1399,9 +1407,10 @@ class jobConstructor(object):
                         anat_space,
                         self.conf.out_atlas.MNI_RESAMP,
                         self.conf.fmap.PREPTOOL,
-                        self.conf.iproc.SCRATCHDIR
+                        self.conf.iproc.SCRATCHDIR,
+                        self._t1_to_mni_warp()
                     ]
-    
+
                     logfile_base = self._io_file_fmt(cmd)
 
                     if not self.args.no_remove_files:
@@ -1470,7 +1479,8 @@ class jobConstructor(object):
                             self.conf.out_atlas.MNI_RESAMP,
                             self.conf.fmap.PREPTOOL,
                             self.conf.iproc.SCRATCHDIR,
-                            str(thisecho)
+                            str(thisecho),
+                            self._t1_to_mni_warp()
                         ]
             
                         logfile_base = self._io_file_fmt(cmd)

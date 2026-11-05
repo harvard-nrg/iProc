@@ -14,7 +14,8 @@ SPACE=${11}
 MNI_ATLAS=${12}
 PREPTOOL=${13}
 SCRATCH=${14}
-rmfiles=${15:-''}
+T1_TO_MNI_WARP=${15}
+rmfiles=${16:-''}
 
 SCRATCHDIR=$(mktemp --directory --tmpdir=${SCRATCH})
 
@@ -22,7 +23,7 @@ pushd $SCRATCHDIR
 
 fslsplit ${SPLIT_IN} ./time_point_
 
-${PYTHON:-python} ${pyscript} -m ${MATDIR} -n ${NUMVOLS} -o ${OUTDIR} -s ${SUBID} -t ${TASK} -x ${SESSID} -b ${BOLDNO} --template-dir ${TEMPLATE_DIR} --destination-space ${SPACE} --mni-atlas ${MNI_ATLAS} --preptool ${PREPTOOL} --scratch=$SCRATCHDIR
+${PYTHON:-python} ${pyscript} -m ${MATDIR} -n ${NUMVOLS} -o ${OUTDIR} -s ${SUBID} -t ${TASK} -x ${SESSID} -b ${BOLDNO} --template-dir ${TEMPLATE_DIR} --destination-space ${SPACE} --mni-atlas ${MNI_ATLAS} --preptool ${PREPTOOL} --scratch=$SCRATCHDIR --t1-to-mni-warp ${T1_TO_MNI_WARP}
 
 popd 
 

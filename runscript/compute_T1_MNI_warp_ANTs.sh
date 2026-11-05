@@ -67,7 +67,7 @@ antsRegistration --verbose 1 \
         --initial-moving-transform [ ${MNI},${T1w1},1 ] \
         --transform Rigid[ 0.1 ] \
         --metric MI[ ${MNI}, ${T1w1},1,32,Regular,0.25 ] \
-        --convergence [ 1000x500x250x0,1e-6,10 ] \ 
+        --convergence [ 1000x500x250x0,1e-6,10 ] \
         --shrink-factors 8x4x2x1 \
         --smoothing-sigmas 3x2x1x0vox \
         --transform Affine[ 0.1 ] \
@@ -81,45 +81,41 @@ antsRegistration --verbose 1 \
         --shrink-factors 8x4x2x1 \
         --smoothing-sigmas 3x2x1x0vox \
         --write-composite-transform 0
+fi
+# the conversion below runs outside the guard, so a rerun after a failed conversion doesn't skip it
 
-
-        
-# directory moved to within iProc
-#c3dDIR=/ncf/mclaughlin/stressdevlab/STAR/2_scripts/3_Functional/1_iProc_STAR/iProc/runscript/c3d/c3d-1.1.0-Linux-x86_64/bin
-#/ncf/mclaughlin/stressdevlab/STAR/2_scripts/3_Functional/c3d_test/c3d-1.1.0-Linux-x86_64/bin
-    
 # Conversion of ANTS-created affine registration matrix to FSL-compatible affine registration matrix
 # Mark Jenkinson: https://www.jiscmail.ac.uk/cgi-bin/webadmin?A2=fsl;c21935f9.1901
-# Add c3d toolbox to iproc's toolbox?
-        
-${c3dDIR}/c3d_affine_tool \
+c3d_affine_tool \
         -ref ${MNI} \
         -src ${T1w1} \
         -itk ${T1w1%.nii.gz}_to_MNI_1Q_0GenericAffine.mat \
         -ras2fsl \
         -o ${T1w1%.nii.gz}_to_MNI_OUT_flirt.mat
-        
-wb_contain -v 1.3.2 wb_command -convert-warpfield \
+
+wb_command -convert-warpfield \
   -from-itk ${T1w1%.nii.gz}_to_MNI_2_3Warp.nii.gz \
   -to-fnirt ${T1w1%.nii.gz}_to_MNI_warp_OUT_fnirt.mat.nii.gz \
   ${MNI}
-        
+
 convertwarp --ref=${MNI} \
-  --premat=${T1w1%.nii.gz}_to_MNI_OUT_flirt.mat \ 
+  --premat=${T1w1%.nii.gz}_to_MNI_OUT_flirt.mat \
   --warp1=${T1w1%.nii.gz}_to_MNI_warp_OUT_fnirt.mat.nii.gz \
   --out=${T1w1%.nii.gz}_to_MNI_OUT2FSL_warp.nii.gz
-        
-#invwarp -w ${T1w1%.nii.gz}_to_MNI_OUT2FSL_warp \  
-#  -o ${T1w1%.nii.gz}_to_MNI_OUT2FSL_invwarp \ 
-#  -r ${T1w1}
-        
+
+# inverse warp (MNI to T1); iProc checks for it as this step's output
+invwarp -w ${T1w1%.nii.gz}_to_MNI_OUT2FSL_warp \
+  -o ${invwarp_out} \
+  -r ${T1w1}
+
 applywarp --in=${T1w1} \
   --ref=${MNI} \
   --warp=${T1w1%.nii.gz}_to_MNI_OUT2FSL_warp \
   --abs \
   --out=${TARGDIR}/OUT_T1_to_MNI_abs.nii.gz
 
-fi
+# the BOLD-to-MNI step reads the forward warp under this name
+ln -sf $(basename ${T1w1%.nii.gz})_to_MNI_OUT2FSL_warp.nii.gz ${TARGDIR}/mpr_to_mni_ANTs.mat.nii.gz
         
 # Making names comparable:
 if [[ ! -e ${TARGDIR}/anat_mni_underlay_brain.nii.gz ]]; then
@@ -130,10 +126,5 @@ fi
   
 outname1=${TARGDIR}/anat_mni_underlay_brain # T1 in MNI space
 outname2=${TARGDIR}/anat_mni_underlay_brain_mask # T1 in MNI space
-  
-fi 
 
 fslmaths ${outname1} -bin ${outname2}
-
-mkdir -p ${TARGDIR}/mni_masks
-ln -sf ${outname2}.nii.gz ${TARGDIR}/mni_masks/wb_mask_1mm.nii.gz

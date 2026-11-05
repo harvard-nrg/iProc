@@ -22,7 +22,6 @@ ln -sf ${csfmask}.nii.gz $TARGDIR/mni_masks/csf_mask.nii.gz
 flirt -in $TARGDIR/mni_masks/csf_mask.nii.gz -applyxfm -init ${FSLDIR}/etc/flirtsch/ident.mat -out $TARGDIR/mni_masks/csf_mask_1mm.nii.gz -paddingsize 0.0 -interp trilinear -ref $MNI111_ATLAS
 flirt -in $TARGDIR/mni_masks/wm_mask.nii.gz -applyxfm -init ${FSLDIR}/etc/flirtsch/ident.mat -out $TARGDIR/mni_masks/wm_mask_1mm.nii.gz -paddingsize 0.0 -interp trilinear -ref $MNI111_ATLAS
 
-elif [ "${REG_STRATEGY}" == "ants" ]; then
 #Project masks to T1
 antsApplyTransforms --default-value 0 \
   --verbose 1 \
@@ -45,8 +44,6 @@ antsApplyTransforms --default-value 0 \
   --transform ${TARGDIR}/mpr_brain_to_MNI_3_InverseComposite.h5
 
 fslmaths ${TARGDIR}/${SESST}_mpr_brain.nii.gz -bin ${TARGDIR}/${SESST}_mpr_brain_mask.nii.gz
-
-fi 
 
 ln -sf ${TARGDIR}/${SESST}_mpr_reorient_brain_mask.nii.gz $TARGDIR/mni_masks/wb_mask_mpr_reorient.nii.gz
 fslreorient2std $TARGDIR/mni_masks/csf_mask_mpr.nii.gz ${csf_out}
