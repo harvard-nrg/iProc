@@ -96,7 +96,9 @@ c3d_affine_tool \
         -ras2fsl \
         -o ${T1w1%.nii.gz}_to_MNI_OUT_flirt.mat
 
-wb_command -convert-warpfield \
+# the module's wb_command needs graphics libraries the kilmer container lacks; Workbench's own launcher and bundled software-OpenGL libraries don't
+WB_DIR=$(dirname $(dirname $(command -v wb_command)))
+LD_LIBRARY_PATH=${WB_DIR}/libs_rh_linux64_software_opengl${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}} ${WB_DIR}/bin_rh_linux64/wb_command -convert-warpfield \
   -from-itk ${T1w1%.nii.gz}_to_MNI_2_3Warp.nii.gz \
   -to-fnirt ${T1w1%.nii.gz}_to_MNI_warp_OUT_fnirt.mat.nii.gz \
   ${MNI}
