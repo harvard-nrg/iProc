@@ -103,21 +103,30 @@ LD_LIBRARY_PATH=${WB_DIR}/libs_rh_linux64_software_opengl${LD_LIBRARY_PATH:+:${L
   -to-fnirt ${T1w1%.nii.gz}_to_MNI_warp_OUT_fnirt.mat.nii.gz \
   ${MNI}
 
+# relative convention, like FNIRT's warps: the BOLD-to-MNI step reads this warp without a convention flag and treats it as relative
 convertwarp --ref=${MNI} \
   --premat=${T1w1%.nii.gz}_to_MNI_OUT_flirt.mat \
   --warp1=${T1w1%.nii.gz}_to_MNI_warp_OUT_fnirt.mat.nii.gz \
-  --out=${T1w1%.nii.gz}_to_MNI_OUT2FSL_warp.nii.gz
+  --out=${T1w1%.nii.gz}_to_MNI_OUT2FSL_warp.nii.gz \
+  --relout
 
-# inverse warp (MNI to T1); iProc checks for it as this step's output
-invwarp -w ${T1w1%.nii.gz}_to_MNI_OUT2FSL_warp \
-  -o ${invwarp_out} \
-  -r ${T1w1}
+# inverse warp (MNI to T1), iProc's output for this step; built from ANTs' own inverse transforms because FSL's invwarp doesn't invert this warp correctly
+antsApplyTransforms -d 3 -r ${T1w1} -o [${T1w1%.nii.gz}_to_MNI_inverse_itk.nii.gz,1] \
+  -t [${T1w1%.nii.gz}_to_MNI_1Q_0GenericAffine.mat,1] -t ${T1w1%.nii.gz}_to_MNI_2_3InverseWarp.nii.gz
+LD_LIBRARY_PATH=${WB_DIR}/libs_rh_linux64_software_opengl${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}} ${WB_DIR}/bin_rh_linux64/wb_command -convert-warpfield \
+  -from-itk ${T1w1%.nii.gz}_to_MNI_inverse_itk.nii.gz \
+  -to-fnirt ${T1w1%.nii.gz}_to_MNI_inverse_fnirt.nii.gz \
+  ${MNI}
+convertwarp --ref=${T1w1} \
+  --warp1=${T1w1%.nii.gz}_to_MNI_inverse_fnirt.nii.gz \
+  --out=${invwarp_out} \
+  --relout
 
 applywarp --in=${T1w1} \
   --ref=${MNI} \
   --warp=${T1w1%.nii.gz}_to_MNI_OUT2FSL_warp \
-  --abs \
-  --out=${TARGDIR}/OUT_T1_to_MNI_abs.nii.gz
+  --rel \
+  --out=${TARGDIR}/OUT_T1_to_MNI.nii.gz
 
 # the BOLD-to-MNI step reads the forward warp under this name
 ln -sf $(basename ${T1w1%.nii.gz})_to_MNI_OUT2FSL_warp.nii.gz ${TARGDIR}/mpr_to_mni_ANTs.mat.nii.gz
