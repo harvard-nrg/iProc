@@ -86,10 +86,13 @@ fi
 
 # Conversion of ANTS-created affine registration matrix to FSL-compatible affine registration matrix
 # Mark Jenkinson: https://www.jiscmail.ac.uk/cgi-bin/webadmin?A2=fsl;c21935f9.1901
+# the c3d module (1.0.0) can't read ANTs' single-precision affine, so convert it to double first
+ConvertTransformFile 3 ${T1w1%.nii.gz}_to_MNI_1Q_0GenericAffine.mat ${T1w1%.nii.gz}_to_MNI_1Q_0GenericAffine_double.mat --convertToAffineType
+
 c3d_affine_tool \
         -ref ${MNI} \
         -src ${T1w1} \
-        -itk ${T1w1%.nii.gz}_to_MNI_1Q_0GenericAffine.mat \
+        -itk ${T1w1%.nii.gz}_to_MNI_1Q_0GenericAffine_double.mat \
         -ras2fsl \
         -o ${T1w1%.nii.gz}_to_MNI_OUT_flirt.mat
 
