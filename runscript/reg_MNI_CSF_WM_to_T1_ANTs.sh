@@ -23,13 +23,14 @@ flirt -in $TARGDIR/mni_masks/csf_mask.nii.gz -applyxfm -init ${FSLDIR}/etc/flirt
 flirt -in $TARGDIR/mni_masks/wm_mask.nii.gz -applyxfm -init ${FSLDIR}/etc/flirtsch/ident.mat -out $TARGDIR/mni_masks/wm_mask_1mm.nii.gz -paddingsize 0.0 -interp trilinear -ref $MNI111_ATLAS
 
 #Project masks to T1
+# linear, like main's applywarp; these masks feed the native-space CSF and WM regressors (fslmeants uses every nonzero voxel)
 antsApplyTransforms --default-value 0 \
   --verbose 1 \
   --dimensionality 3 \
   --float 1 \
   --input $TARGDIR/mni_masks/csf_mask.nii.gz \
   --output $TARGDIR/mni_masks/csf_mask_mpr.nii.gz \
-  --interpolation LanczosWindowedSinc \
+  --interpolation Linear \
   --reference-image ${TARGDIR}/${SESST}_mpr.nii.gz \
   --transform ${TARGDIR}/mpr_brain_to_MNI_3_InverseComposite.h5
 
@@ -39,13 +40,13 @@ antsApplyTransforms --default-value 0 \
   --float 1 \
   --input $TARGDIR/mni_masks/wm_mask.nii.gz \
   --output $TARGDIR/mni_masks/wm_mask_mpr.nii.gz \
-  --interpolation LanczosWindowedSinc \
+  --interpolation Linear \
   --reference-image ${TARGDIR}/${SESST}_mpr.nii.gz \
   --transform ${TARGDIR}/mpr_brain_to_MNI_3_InverseComposite.h5
 
 fslmaths ${TARGDIR}/${SESST}_mpr_brain.nii.gz -bin ${TARGDIR}/${SESST}_mpr_brain_mask.nii.gz
 
-ln -sf ${TARGDIR}/${SESST}_mpr_reorient_brain_mask.nii.gz $TARGDIR/mni_masks/wb_mask_mpr_reorient.nii.gz
+ln -sf ../${SESST}_mpr_reorient_brain_mask.nii.gz $TARGDIR/mni_masks/wb_mask_mpr_reorient.nii.gz
 fslreorient2std $TARGDIR/mni_masks/csf_mask_mpr.nii.gz ${csf_out}
 fslreorient2std $TARGDIR/mni_masks/wm_mask_mpr.nii.gz ${wm_out}
 
