@@ -715,12 +715,13 @@ def filter_and_project(steps, args):
     ## can these be run all at the same time? I think so
 
     # despike outputs are opt-in via a 'despike' row in the cluster requests csv
+    # optional 'despike_anat' / 'despike_mni' rows set each space's despike computation separately (default: the 'despike' row)
     run_despike = 'despike' in args.cluster and args.cluster['despike']['RUNMODE'] != 'SKIP'
     if run_despike:
         job_spec_list = steps.despike(overwrite=args.overwrite)
-        rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['despike'])
+        rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster.get('despike_anat', args.cluster['despike']))
         job_spec_list = steps.despike_mni(overwrite=args.overwrite)
-        rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster['despike'])
+        rmfiles += execute(args.executor,job_spec_list,steps,**args.cluster.get('despike_mni', args.cluster['despike']))
 
     #MNI
     res = conf.out_atlas.RESOLUTION
